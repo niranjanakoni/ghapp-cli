@@ -1,0 +1,55 @@
+{
+  "name": "ghapp-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "GitHub App CLI - A modular command-line interface for GitHub App APIs",
+  "bin": {
+    "ghapp": "./cli.js"
+  },
+  "main": "./cli.js",
+  "scripts": {
+    "start": "node cli.js",
+    "test": "node --experimental-loader ./test/mock-loader.js --test test/*.test.js",
+    "test:watch": "node --experimental-loader ./test/mock-loader.js --test --watch test/*.test.js",
+    "lint": "eslint src/ cli.js",
+    "lint:fix": "eslint src/ cli.js --fix",
+    "dev": "node --watch cli.js",
+    "build": "echo 'No build step required for this project'",
+    "validate": "node -e \"import('./src/config/config.js').then(({validateConfig}) => process.exit(validateConfig() ? 0 : 1))\""
+  },
+  "dependencies": {
+    "@octokit/auth-app": "^4.0.0",
+    "@octokit/rest": "^20.0.0",
+    "commander": "^11.0.0",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.0.0",
+    "eslint-plugin-n": "^15.0.0",
+    "eslint-plugin-promise": "^6.0.0"
+  },
+  "keywords": [
+    "github",
+    "cli",
+    "github-app",
+    "api",
+    "repositories",
+    "teams",
+    "automation"
+  ],
+  "author": "DevOpsathon Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/ghapp-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/ghapp-cli/issues"
+  },
+  "homepage": "https://github.com/your-org/ghapp-cli#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
