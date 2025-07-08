@@ -195,6 +195,7 @@ export function handleWebhooksHelpCommand() {
       { flags: '--detailed', description: 'Show detailed webhook information including config' },
       { flags: '--event <type>', description: 'Filter by specific event type (push, pull_request, etc.)' },
       { flags: '--active-only', description: 'Show only active webhooks' },
+      { flags: '--show-all', description: 'Show all repositories even those without webhooks' },
       { flags: '--sort <field>', description: 'Sort by: repo, webhooks, url, events, created' },
       { flags: '--order <order>', description: 'Sort order: asc, desc (default: asc)' },
       { flags: '--stats', description: 'Show webhook statistics summary' },

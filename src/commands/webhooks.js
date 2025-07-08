@@ -8,6 +8,43 @@ import { filterRepositories, sortRepositories } from "../utils/filters.js";
 import { displaySummary, displayProgress, displayError } from "../utils/display.js";
 import { saveCSVFile } from "../utils/fileUtils.js";
 import { logFetch, logExport, logDetection, logDebug } from "../utils/logger.js";
+import { config } from "../config/config.js";
+
+/**
+ * Fetches paginated data quietly (without logging permission errors)
+ * @param {Function} apiCall - GitHub API call function
+ * @param {Object} options - API call options
+ * @returns {Promise<Array>} Results array
+ */
+async function fetchAllPagesQuietly(apiCall, options = {}) {
+  const results = [];
+  let currentPage = 1;
+  const perPage = Math.min(options.perPage || config.api.defaultPerPage, config.api.maxPerPage);
+  
+  while (true) {
+    const response = await apiCall({ 
+      ...options, 
+      page: currentPage, 
+      per_page: perPage 
+    });
+    
+    // Handle different response structures
+    const data = Array.isArray(response.data) 
+      ? response.data 
+      : response.data.repositories || response.data.items || [];
+    
+    results.push(...data);
+    
+    // Check if we've reached the last page
+    if (data.length < perPage) {
+      break;
+    }
+    
+    currentPage++;
+  }
+  
+  return results;
+}
 
 /**
  * Webhooks command handler
@@ -72,6 +109,18 @@ export async function handleWebhooksCommand(org, options = {}) {
 
     // Filter webhooks based on options
     let filteredWebhooks = webhookData;
+    
+    // Check if there are permission issues affecting most repositories
+    const repositoriesWithErrors = webhookData.filter(item => item.access_error === 'insufficient_permissions').length;
+    const hasWidespreadPermissionIssues = repositoriesWithErrors > (webhookData.length * 0.5);
+    
+    // By default, only show repositories that have webhooks unless --show-all is specified
+    if (!options.showAll) {
+      filteredWebhooks = filteredWebhooks.filter(item => 
+        item.webhooks.length > 0
+      );
+    }
+    
     if (options.event) {
       filteredWebhooks = filteredWebhooks.filter(item => 
         item.webhooks.some(webhook => webhook.events.includes(options.event))
@@ -100,6 +149,14 @@ export async function handleWebhooksCommand(org, options = {}) {
       }
     } else {
       const totalWebhooks = filteredWebhooks.reduce((sum, item) => sum + item.webhooks.length, 0);
+      
+      // Show information about filtering
+      if (!options.showAll && webhookData.length > filteredWebhooks.length) {
+        const hiddenCount = webhookData.length - filteredWebhooks.length;
+        console.log(`\n🔍 Showing ${filteredWebhooks.length} repositories with webhooks (hiding ${hiddenCount} repositories without webhooks).`);
+        console.log("   Use --show-all to display all repositories including those without webhooks.\n");
+      }
+      
       displaySummary('webhooks', totalWebhooks, `across ${filteredWebhooks.length} repositories in ${org}`);
       
       filteredWebhooks.forEach((item) => displayRepositoryWebhooks(item, options.detailed));
@@ -123,6 +180,8 @@ export async function handleWebhooksCommand(org, options = {}) {
  */
 async function enrichRepositoriesWithWebhooks(octokit, org, repositories) {
   const enrichedData = [];
+  let permissionErrorCount = 0;
+  let hasShownPermissionWarning = false;
   
   for (let i = 0; i < repositories.length; i++) {
     const repo = repositories[i];
@@ -131,7 +190,7 @@ async function enrichRepositoriesWithWebhooks(octokit, org, repositories) {
     
     try {
       // Get webhooks for this repository
-      const webhooks = await fetchAllPages(
+      const webhooks = await fetchAllPagesQuietly(
         (params) => octokit.rest.repos.listWebhooks(params),
         { owner: org, repo: repo.name, perPage: 100 }
       );
@@ -196,7 +255,23 @@ async function enrichRepositoriesWithWebhooks(octokit, org, repositories) {
       });
 
     } catch (error) {
-      logDebug(`Cannot access webhooks for repository ${repo.name}: ${error.message}`);
+      // Handle permission errors more gracefully
+      if (error.status === 403 && error.message.includes("Resource not accessible by integration")) {
+        permissionErrorCount++;
+        
+        // Show warning only once, not for every repository
+        if (!hasShownPermissionWarning) {
+          console.log("\n⚠️  GitHub App lacks webhook read permissions. Skipping webhook data collection...");
+          console.log("📋 To enable webhook features, update your GitHub App permissions:");
+          console.log("   • Repository Administration: Read");
+          console.log("   • Then update the app installation\n");
+          hasShownPermissionWarning = true;
+        }
+        
+        logDebug(`Skipping webhooks for ${repo.name} due to insufficient permissions`);
+      } else {
+        logDebug(`Cannot access webhooks for repository ${repo.name}: ${error.message}`);
+      }
       
       // Add repository with empty webhooks if access fails
       enrichedData.push({
@@ -208,9 +283,16 @@ async function enrichRepositoriesWithWebhooks(octokit, org, repositories) {
           default_branch: repo.default_branch
         },
         webhooks: [],
-        webhook_count: 0
+        webhook_count: 0,
+        access_error: error.status === 403 ? 'insufficient_permissions' : 'unknown_error'
       });
     }
+  }
+  
+  // Show summary of permission issues if any occurred
+  if (permissionErrorCount > 0) {
+    console.log(`\n📊 Summary: Skipped webhook data for ${permissionErrorCount}/${repositories.length} repositories due to permission restrictions.`);
+    console.log("🔧 Update your GitHub App's 'Administration' permission to 'Read' to access webhook configurations.\n");
   }
   
   return enrichedData;

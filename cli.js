@@ -136,6 +136,7 @@ program
   .option("--detailed", "Show detailed webhook information")
   .option("--event <type>", "Filter by specific event type (push, pull_request, etc.)")
   .option("--active-only", "Show only active webhooks")
+  .option("--show-all", "Show all repositories even those without webhooks")
   .option("--sort <field>", "Sort by (repo, webhooks, url, events, created)")
   .option("--order <order>", "Sort order (asc, desc)")
   .option("--stats", "Show webhook statistics")

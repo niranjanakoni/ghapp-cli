@@ -192,11 +192,14 @@ ghapp repos --visibility private --language javascript --min-stars 10 --stats
 # Team management with hierarchy and member details
 ghapp teams myorg --fetch --detailed --sort members --order desc
 
-# Webhook discovery and analysis (NEW)
+# Webhook discovery and analysis with smart filtering (NEW)
 ghapp webhooks --detailed --event push --active-only --stats
 
-# Export webhook data to CSV for analysis (NEW)
-ghapp webhooks --fetch --sort webhooks --order desc
+# Show only repositories with webhooks (default behavior)
+ghapp webhooks --sort webhooks --order desc
+
+# Show all repositories including those without webhooks
+ghapp webhooks --show-all --fetch
 
 # Token management and validation
 ghapp token --validate --refresh
@@ -218,11 +221,12 @@ Beyond the requirements, I added several valuable features:
 5. **Progress Indicators**: User feedback for long operations with real-time progress
 6. **Token Management**: Automatic token refresh, validation, and expiry handling
 7. **Auto-Detection**: Automatic organization detection for teams and webhooks
-8. **Webhook Management**: Complete webhook discovery, configuration analysis, and health monitoring (NEW)
+8. **Webhook Management**: Complete webhook discovery, configuration analysis, and smart filtering (NEW)
 9. **Team Hierarchy**: Parent/child team relationships with member role management (ENHANCED)
 10. **Event Filtering**: Filter webhooks by specific event types (push, pull_request, etc.) (NEW)
 11. **Security Analysis**: Webhook security configuration analysis (SSL, secrets) (NEW)
 12. **Performance Optimization**: Parallel processing for webhook data enrichment (NEW)
+13. **Smart Filtering**: Intelligent default filtering for webhooks (shows only repos with webhooks) (NEW)
 
 ## 🔧 Migration
 
@@ -246,10 +250,11 @@ The implementation successfully transforms a monolithic CLI into a well-structur
 - **Production-ready features** including error handling, logging, and performance optimization
 
 ### **New Capabilities Added:**
-- 🔗 **Webhook Discovery**: Complete repository webhook analysis and monitoring
+- 🔗 **Webhook Discovery**: Complete repository webhook analysis and monitoring with smart filtering
 - 👥 **Team Hierarchy**: Advanced team management with parent/child relationships
 - 📊 **Enhanced Analytics**: Statistics and sorting for all data types
 - 📋 **Comprehensive CSV**: Export capabilities for repositories, teams, and webhooks
 - 🔒 **Security Analysis**: Webhook security configuration assessment
+- 🎯 **Smart Filtering**: Intelligent default behavior for webhook commands (shows only repos with webhooks)
 
 All 21 requirements have been met with significant value-added features that make this a production-ready, enterprise-grade CLI tool for GitHub App management.

@@ -1,6 +1,18 @@
 # GitHub App CLI
 
-A modular, feature-rich command-line interface for interacting with GitHub App APIs. This CLI provides comprehensive functionality for managing repositories, teams, webhooks, and authentication tokens through your GitHub App installation.
+A modular, feature-rich command-line interface for interacting with GitHub App APIs. This CLI provides comprehensive functionality for managing repositories, teams, webhooks, and authentication### Webhook Options
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `--repo <n>` | Check webhooks for specific repository only | `--repo myrepo` |
+| `--fetch` | Save data to CSV file instead of displaying | `--fetch` |
+| `--detailed` | Show detailed webhook information | `--detailed` |
+| `--event <type>` | Filter by specific event type | `--event push` |
+| `--active-only` | Show only active webhooks | `--active-only` |
+| `--show-all` | Show all repositories even those without webhooks | `--show-all` |
+| `--sort <field>` | Sort by (repo, webhooks, url, events, created) | `--sort webhooks` |
+| `--order <order>` | Sort order (asc, desc) | `--order desc` |
+| `--stats` | Show webhook statistics | `--stats` |ugh your GitHub App installation.
 
 ## Features
 
@@ -125,11 +137,14 @@ ghapp teams --sort members --order desc --stats
 ### Webhook Commands
 
 ```bash
-# List all webhooks for organization repositories
+# List all webhooks for organization repositories (shows only repos with webhooks)
 ghapp webhooks
 
 # List webhooks in specific organization
 ghapp webhooks myorg
+
+# Show all repositories including those without webhooks
+ghapp webhooks --show-all
 
 # Check webhooks for specific repository
 ghapp webhooks --repo myrepo
@@ -149,45 +164,8 @@ ghapp webhooks --active-only
 # Sort by webhook count with statistics
 ghapp webhooks --sort webhooks --order desc --stats
 ```
-ghapp teams myorg
 
-# Filter by team privacy
-ghapp teams --visibility secret
-
-# Show detailed team information
-ghapp teams --detailed
-
-# Export teams to CSV
-ghapp teams --fetch
-
-# Skip member counts for faster results
-ghapp teams --skip-members
-
-# Filter by team size
-ghapp teams --min-members 5 --max-members 20
-```
-
-### Webhook Commands
-
-```bash
-# List webhooks for all repositories
-ghapp webhooks
-
-# Check specific repository webhooks
-ghapp webhooks --repo myrepo
-
-# Show detailed webhook information
-ghapp webhooks --detailed
-
-# Export webhooks to CSV
-ghapp webhooks --fetch
-
-# Filter by event type
-ghapp webhooks --event push
-
-# Show only active webhooks
-ghapp webhooks --active-only --stats
-```
+**Note**: By default, the webhooks command only displays repositories that have webhooks configured. This provides a cleaner, more focused view of your webhook infrastructure. Use `--show-all` to display all repositories including those without webhooks.
 
 ### Token Commands
 
