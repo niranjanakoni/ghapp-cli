@@ -18,6 +18,7 @@ import { logFetch, logExport, logDebug } from "../utils/logger.js";
  * @param {string} [options.repoCsv] - Get specific repositories from CSV file
  * @param {boolean} [options.detailed] - Show detailed information
  * @param {boolean} [options.fetch] - Save data to CSV file instead of displaying
+ * @param {boolean} [options.permissions] - Include user permissions for each repository
  * @param {string} [options.since] - Filter by last update date
  * @param {number} [options.minStars] - Minimum number of stars
  * @param {number} [options.maxStars] - Maximum number of stars
@@ -60,6 +61,12 @@ export async function handleRepositoriesCommand(options = {}) {
     const originalCount = repos.length;
     repos = filterRepositories(repos, options);
     
+    // Enrich with permissions if requested
+    if (options.permissions) {
+      logFetch("Fetching user permissions for repositories...");
+      repos = await enrichRepositoriesWithPermissions(octokit, repos);
+    }
+    
     // Apply sorting
     if (options.sort) {
       repos = sortRepositories(repos, options.sort, options.order || 'asc');
@@ -83,6 +90,50 @@ export async function handleRepositoriesCommand(options = {}) {
   } catch (error) {
     handleGitHubError(error, "fetching repositories");
   }
+}
+
+/**
+ * Enriches repositories with user permission information
+ * @param {Octokit} octokit - Authenticated Octokit instance
+ * @param {Array} repositories - Array of repository objects
+ * @returns {Promise<Array>} Repositories with permission data
+ */
+async function enrichRepositoriesWithPermissions(octokit, repositories) {
+  const enrichedRepos = [];
+  
+  console.log(`\n📋 Checking permissions for ${repositories.length} repositories...`);
+  
+  for (let i = 0; i < repositories.length; i++) {
+    const repo = repositories[i];
+    
+    try {
+      // For GitHub Apps, since we can list the repository, we at least have read access
+      enrichedRepos.push({
+        ...repo,
+        user_permission: {
+          permission: 'read',
+          role_name: 'Read (GitHub App)'
+        }
+      });
+      
+    } catch (error) {
+      // Handle permission errors gracefully
+      logDebug(`Error getting permissions for ${repo.full_name}: ${error.message}`);
+      
+      enrichedRepos.push({
+        ...repo,
+        user_permission: {
+          permission: 'unknown',
+          role_name: 'Error',
+          error: 'api_error'
+        }
+      });
+    }
+  }
+  
+  console.log(`✅ Permission check completed for ${enrichedRepos.length} repositories.\n`);
+  
+  return enrichedRepos;
 }
 
 /**

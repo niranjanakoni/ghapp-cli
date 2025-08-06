@@ -13,6 +13,9 @@ import { logFile, logError, logSuccess } from "./logger.js";
  * @returns {string} CSV formatted string
  */
 export function generateRepositoryCSV(repos) {
+  // Check if any repository has permission data
+  const hasPermissions = repos.some(repo => repo.user_permission);
+  
   const headers = [
     'Name',
     'Full Name',
@@ -27,19 +30,36 @@ export function generateRepositoryCSV(repos) {
     'HTML URL'
   ];
   
-  const rows = repos.map(repo => [
-    repo.name || '',
-    repo.full_name || '',
-    repo.visibility || (repo.private ? 'private' : 'public'),
-    repo.language || '',
-    escapeCSVField(repo.description || ''),
-    repo.stargazers_count || 0,
-    repo.forks_count || 0,
-    repo.size || 0,
-    repo.updated_at || '',
-    repo.clone_url || '',
-    repo.html_url || ''
-  ]);
+  // Add permission columns if permission data is available
+  if (hasPermissions) {
+    headers.push('User Permission', 'Role Name');
+  }
+  
+  const rows = repos.map(repo => {
+    const row = [
+      repo.name || '',
+      repo.full_name || '',
+      repo.visibility || (repo.private ? 'private' : 'public'),
+      repo.language || '',
+      escapeCSVField(repo.description || ''),
+      repo.stargazers_count || 0,
+      repo.forks_count || 0,
+      repo.size || 0,
+      repo.updated_at || '',
+      repo.clone_url || '',
+      repo.html_url || ''
+    ];
+    
+    // Add permission data if available
+    if (hasPermissions) {
+      row.push(
+        repo.user_permission ? repo.user_permission.permission : '',
+        repo.user_permission ? (repo.user_permission.role_name || '') : ''
+      );
+    }
+    
+    return row;
+  });
   
   return formatCSVContent(headers, rows);
 }

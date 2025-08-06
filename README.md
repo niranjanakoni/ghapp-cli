@@ -1,10 +1,10 @@
 # GitHub App CLI
 
-A modular, feature-rich command-line interface for interacting with GitHub App APIs. This CLI provides comprehensive functionality for managing repositories, teams, webhooks, and authentication### Webhook Options
+A modular, feature-rich command-line interface for interacting with GitHub App APIs. This CLI provides comprehensive functionality for managing repositories, teams, webhooks, and authentication through ### Webhook Options
 
 | Option | Description | Example |
 |--------|-------------|---------|
-| `--repo <n>` | Check webhooks for specific repository only | `--repo myrepo` |
+| `--repo <name>` | Check webhooks for specific repository only | `--repo myrepo` |
 | `--fetch` | Save data to CSV file instead of displaying | `--fetch` |
 | `--detailed` | Show detailed webhook information | `--detailed` |
 | `--event <type>` | Filter by specific event type | `--event push` |
@@ -12,7 +12,7 @@ A modular, feature-rich command-line interface for interacting with GitHub App A
 | `--show-all` | Show all repositories even those without webhooks | `--show-all` |
 | `--sort <field>` | Sort by (repo, webhooks, url, events, created) | `--sort webhooks` |
 | `--order <order>` | Sort order (asc, desc) | `--order desc` |
-| `--stats` | Show webhook statistics | `--stats` |ugh your GitHub App installation.
+| `--stats` | Show webhook statistics | `--stats` |App installation.
 
 ## Features
 
@@ -95,6 +95,12 @@ ghapp repos --language javascript
 
 # Show detailed information
 ghapp repos --detailed
+
+# Include user permissions for each repository
+ghapp repos --permissions
+
+# Detailed view with permissions
+ghapp repos --permissions --detailed
 
 # Export to CSV
 ghapp repos --fetch
@@ -204,6 +210,7 @@ ghapp help-token
 | `--repo-csv <file>` | Get specific repositories from CSV file | `--repo-csv repos.csv` |
 | `--detailed` | Show detailed information including description | `--detailed` |
 | `--fetch` | Save data to CSV file instead of displaying | `--fetch` |
+| `--permissions` | Include user permissions for each repository | `--permissions` |
 | `--since <date>` | Filter by last update date (ISO 8601) | `--since 2024-01-01` |
 | `--min-stars <num>` | Minimum number of stars | `--min-stars 10` |
 | `--max-stars <num>` | Maximum number of stars | `--max-stars 1000` |
@@ -245,26 +252,6 @@ ghapp help-token
 | `--refresh` | Force refresh the token | `--refresh` |
 | `--validate` | Validate token without showing details | `--validate` |
 | `--detailed` | Show detailed information | `--detailed` |
-| `--fetch` | Export to CSV file | `--fetch` |
-| `--since <date>` | Filter by last update date (ISO 8601) | `--since 2024-01-01` |
-| `--min-stars <num>` | Minimum number of stars | `--min-stars 10` |
-| `--max-stars <num>` | Maximum number of stars | `--max-stars 100` |
-| `--sort <field>` | Sort by (name, stars, forks, updated, size) | `--sort stars` |
-| `--order <order>` | Sort order (asc, desc) | `--order desc` |
-
-### Team Options
-
-| Option | Description | Example |
-|--------|-------------|---------|
-| `[org]` | Organization name (auto-detects if not provided) | `ghapp teams myorg` |
-| `-v, --visibility <type>` | Filter by visibility (open, closed, secret) | `--visibility secret` |
-| `--detailed` | Show detailed information | `--detailed` |
-| `--fetch` | Export to CSV file | `--fetch` |
-| `--skip-members` | Skip member/repo counts (faster) | `--skip-members` |
-| `--min-members <num>` | Minimum number of members | `--min-members 5` |
-| `--max-members <num>` | Maximum number of members | `--max-members 20` |
-| `--sort <field>` | Sort by (name, members, repos) | `--sort members` |
-| `--order <order>` | Sort order (asc, desc) | `--order desc` |
 
 ### Global Options
 

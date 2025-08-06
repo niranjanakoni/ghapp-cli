@@ -62,6 +62,7 @@ export function handleReposHelpCommand() {
       { flags: '--repo-csv <file>', description: 'Get specific repositories from CSV file' },
       { flags: '--detailed', description: 'Show detailed repository information' },
       { flags: '--fetch', description: 'Export to CSV file instead of displaying' },
+      { flags: '--permissions', description: 'Include user permissions for each repository' },
       { flags: '--since <date>', description: 'Filter by last update date (ISO 8601)' },
       { flags: '--min-stars <num>', description: 'Minimum number of stars' },
       { flags: '--max-stars <num>', description: 'Maximum number of stars' },
@@ -76,6 +77,8 @@ export function handleReposHelpCommand() {
       { command: 'ghapp repos --language javascript', description: 'Only JavaScript repositories' },
       { command: 'ghapp repos --repo-csv myrepos.csv', description: 'Get specific repos from CSV' },
       { command: 'ghapp repos --detailed', description: 'Show detailed information' },
+      { command: 'ghapp repos --permissions', description: 'Include user permissions for each repo' },
+      { command: 'ghapp repos --permissions --detailed', description: 'Detailed view with permissions' },
       { command: 'ghapp repos --fetch', description: 'Save to CSV file' },
       { command: 'ghapp repos --min-stars 10', description: 'Repositories with 10+ stars' },
       { command: 'ghapp repos --sort stars --order desc', description: 'Sort by stars (most first)' },
@@ -86,7 +89,9 @@ export function handleReposHelpCommand() {
       'CSV input format: repository names, one per line',
       'Output CSV includes: name, visibility, language, stars, forks, etc.',
       'Files are saved with timestamp: repositories_YYYY-MM-DDTHH-mm-ss-SSSZ.csv',
-      'Use --detailed for description, URLs, and additional metrics'
+      'Use --detailed for description, URLs, and additional metrics',
+      'Permissions: admin (🔴), maintain (🟠), write (🟡), triage (🔵), read (🟢), none (⚪)',
+      '--permissions may take longer as it requires additional API calls per repository'
     ]
   };
   

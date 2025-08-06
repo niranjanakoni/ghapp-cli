@@ -36,6 +36,34 @@ export function getTeamVisibility(privacy) {
 }
 
 /**
+ * Gets user permission display string
+ * @param {Object} permission - Permission object
+ * @returns {string} Formatted permission string
+ */
+export function getPermissionDisplay(permission) {
+  if (!permission) return 'Unknown';
+  
+  switch (permission.permission) {
+    case 'admin':
+      return '🔴 Admin';
+    case 'maintain':
+      return '🟠 Maintain';
+    case 'write':
+      return '🟡 Write';
+    case 'triage':
+      return '🔵 Triage';
+    case 'read':
+      return '🟢 Read';
+    case 'none':
+      return '⚪ None';
+    case 'unknown':
+      return '❓ Unknown';
+    default:
+      return permission.permission;
+  }
+}
+
+/**
  * Displays repository information
  * @param {Object} repo - Repository object
  * @param {boolean} detailed - Whether to show detailed information
@@ -43,9 +71,10 @@ export function getTeamVisibility(privacy) {
 export function displayRepository(repo, detailed = false) {
   const visibility = getRepoVisibility(repo);
   const language = repo.language ? ` (${repo.language})` : '';
+  const permission = repo.user_permission ? ` | Permission: ${getPermissionDisplay(repo.user_permission)}` : '';
   
   if (detailed) {
-    console.log(`- ${repo.full_name} ${visibility}${language}`);
+    console.log(`- ${repo.full_name} ${visibility}${language}${permission}`);
     
     if (repo.description) {
       console.log(`  Description: ${repo.description}`);
@@ -55,6 +84,10 @@ export function displayRepository(repo, detailed = false) {
     const forks = repo.forks_count || 0;
     const size = repo.size || 0;
     console.log(`  Stars: ${stars} | Forks: ${forks} | Size: ${size} KB`);
+    
+    if (repo.user_permission && repo.user_permission.role_name) {
+      console.log(`  Role: ${repo.user_permission.role_name}`);
+    }
     
     if (repo.updated_at) {
       const updatedDate = new Date(repo.updated_at).toLocaleDateString();
@@ -67,7 +100,7 @@ export function displayRepository(repo, detailed = false) {
     
     console.log('');
   } else {
-    console.log(`- ${repo.full_name} ${visibility}${language}`);
+    console.log(`- ${repo.full_name} ${visibility}${language}${permission}`);
   }
 }
 
