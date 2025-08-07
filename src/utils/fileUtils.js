@@ -165,7 +165,47 @@ function escapeCSVField(field) {
 }
 
 /**
- * Saves CSV content to a file with timestamp
+ * Creates organized output directory structure for CSV exports
+ * @param {string} dataType - Type of data (repos, teams, webhooks, collaborators)
+ * @param {string} baseDir - Base output directory
+ * @returns {string} Full path to the organized directory
+ */
+export function createOutputDirectory(dataType, baseDir = './') {
+  const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  const outputDir = path.join(baseDir, 'ghapp-exports', timestamp, dataType);
+  
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  
+  return outputDir;
+}
+
+/**
+ * Saves CSV content to an organized folder structure
+ * @param {string} content - CSV content to save
+ * @param {string} filename - Base filename (without extension)
+ * @param {string} dataType - Type of data (repos, teams, webhooks, collaborators)
+ * @param {string} baseDir - Base output directory (default: current directory)
+ * @returns {string|null} Full filename if successful, null if failed
+ */
+export function saveCSVFileOrganized(content, filename, dataType, baseDir = './') {
+  try {
+    const outputDir = createOutputDirectory(dataType, baseDir);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fullFilename = path.join(outputDir, `${filename}_${timestamp}.csv`);
+
+    fs.writeFileSync(fullFilename, content, 'utf8');
+    logFile(`📊 ${dataType.toUpperCase()} data saved to: ${fullFilename}`);
+    return fullFilename;
+  } catch (error) {
+    logError(`Error saving ${dataType} CSV file: ${error.message}`, error);
+    return null;
+  }
+}
+
+/**
+ * Saves CSV content to a file with timestamp (legacy function for backward compatibility)
  * @param {string} content - CSV content to save
  * @param {string} filename - Base filename (without extension)
  * @param {string} outputDir - Output directory (default: current directory)
@@ -212,11 +252,13 @@ export function readRepositoryCSV(filePath) {
       return [];
     }
 
-    // Check if first line is a header
+    // Check if first line is a header (more sophisticated detection)
     const firstLine = lines[0].toLowerCase();
-    const hasHeader = firstLine.includes('name') ||
-                     firstLine.includes('repository') ||
-                     firstLine.includes('repo');
+    const hasHeader = firstLine.includes('repository name') ||
+                     firstLine.includes('repo name') ||
+                     firstLine.includes('name,') ||
+                     firstLine.startsWith('name') ||
+                     (firstLine.includes('repository') && firstLine.includes(',')); // Only if it has commas like a real header
 
     const repoNames = hasHeader ? lines.slice(1) : lines;
 

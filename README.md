@@ -10,7 +10,7 @@ A modular, feature-rich command-line interface for interacting with GitHub App A
 - **Team Management**: Manage organization teams with hierarchy, member roles, and repository permissions
 - **Webhook Management**: Discover, analyze, and export repository webhook configurations
 - **Token Management**: Handle GitHub App authentication with automatic token refresh
-- **CSV Export/Import**: Export data to CSV files and import repository lists from CSV
+- **CSV Export/Import**: Export data to CSV files with organized folder structure and import repository lists from CSV
 - **Comprehensive Filtering**: Advanced filtering options for repositories, teams, and webhooks
 - **Statistics & Analytics**: Built-in statistics for all data types with sorting capabilities
 - **Error Handling**: Robust error handling with user-friendly messages
@@ -20,36 +20,37 @@ A modular, feature-rich command-line interface for interacting with GitHub App A
 
 ## Installation
 
-### Prerequisites
+> 📋 **Detailed Installation Guide**: See [INSTALL.md](./INSTALL.md) for comprehensive installation instructions, troubleshooting, and platform-specific setup.
 
-- Node.js >= 18.0.0
-- A configured GitHub App with appropriate permissions
+### Quick Setup
 
-### Setup
-
-1. Clone the repository:
+**For Source Installation:**
 ```bash
-git clone https://github.com/your-org/ghapp-cli.git
+git clone https://github.com/niranjanakoni/ghapp-cli.git
 cd ghapp-cli
-```
-
-2. Install dependencies:
-```bash
 npm install
+npm link
 ```
 
-3. Configure environment variables in `.env`:
+**For Binary Distribution:**
+```bash
+# Download binary from GitHub releases
+# Place .env and private-key.pem in same directory as binary
+# Run: ./ghapp --help (Linux/macOS) or ghapp.exe --help (Windows)
+```
+
+**Configuration (both methods):**
 ```env
+# Create .env file with:
 GITHUB_APP_ID=your_app_id
 GITHUB_INSTALLATION_ID=your_installation_id
-GITHUB_PRIVATE_KEY_PATH=path/to/private-key.pem
-GITHUB_APP_TOKEN=auto_generated
-GITHUB_APP_TOKEN_EXPIRES=auto_generated
+GITHUB_PRIVATE_KEY_PATH=./private-key.pem
 ```
 
-4. Make the CLI globally available:
+**Verification:**
 ```bash
-npm link
+ghapp token --validate
+ghapp repos --help
 ```
 
 ## Usage
@@ -416,7 +417,7 @@ Demo-workshop-org,codeowners-test,nikhilgowda-135,write
 
 ## CSV Export Features
 
-All commands support CSV export with `--fetch` option:
+All commands support CSV export with `--fetch` option. **NEW**: All exports are automatically organized into date-based folders by data type for better file management.
 
 ### Repository Collaborators CSV Export (NEW!)
 - Clean collaborator data with direct repository access only
@@ -449,6 +450,34 @@ All commands support CSV export with `--fetch` option:
 - Secret configuration status and SSL settings
 - Event types and creation/update timestamps
 - Last response status and messages
+
+### Organized Export Structure
+
+All CSV exports are automatically organized into a clean directory structure:
+
+```
+ghapp-exports/
+└── YYYY-MM-DD/              # Date-based folders
+    ├── repositories/        # Repository data exports
+    ├── collaborators/       # Collaborator data exports  
+    ├── teams/              # Team data exports
+    └── webhooks/           # Webhook data exports
+```
+
+**Benefits:**
+- **Clean Organization**: No more CSV files cluttering your project directory
+- **Date Separation**: Each day's exports go into separate folders
+- **Type Separation**: Different data types are organized into dedicated subdirectories
+- **Easy Management**: Simple to find, archive, or clean up old exports
+- **Professional Structure**: Maintains a clean workspace while preserving all export data
+
+**Example Export Paths:**
+```
+ghapp-exports/2025-08-07/repositories/repos_2025-08-07T10-30-15-123Z.csv
+ghapp-exports/2025-08-07/collaborators/collabs_2025-08-07T10-31-22-456Z.csv
+ghapp-exports/2025-08-07/teams/teams_2025-08-07T10-32-18-789Z.csv
+ghapp-exports/2025-08-07/webhooks/webhooks_2025-08-07T10-33-05-012Z.csv
+```
 
 ## Global Options
 

@@ -6,7 +6,7 @@
 import { getOctokitClient, fetchAllPages, handleGitHubError } from '../utils/github.js';
 import { filterRepositories, filterRepositoriesByNames, sortRepositories } from '../utils/filters.js';
 import { displayRepository, displaySummary, displayError } from '../utils/display.js';
-import { generateRepositoryCSV, generateCollaboratorCSV, saveCSVFile, readRepositoryCSV } from '../utils/fileUtils.js';
+import { generateRepositoryCSV, generateCollaboratorCSV, saveCSVFileOrganized, readRepositoryCSV } from '../utils/fileUtils.js';
 import { logFetch, logExport, logDebug } from '../utils/logger.js';
 
 /**
@@ -81,18 +81,21 @@ export async function handleRepositoriesCommand(options = {}) {
     if (options.fetch) {
       let csvContent;
       let filenamePrefix;
+      let dataType;
 
       if (options.userPermission) {
         // Generate collaborator CSV when permissions are requested
         csvContent = generateCollaboratorCSV(repos);
         filenamePrefix = 'collaborators';
+        dataType = 'collaborators';
       } else {
         // Generate standard repository CSV with metrics
         csvContent = generateRepositoryCSV(repos);
         filenamePrefix = 'repositories';
+        dataType = 'repositories';
       }
 
-      const filename = saveCSVFile(csvContent, filenamePrefix);
+      const filename = saveCSVFileOrganized(csvContent, filenamePrefix, dataType);
 
       if (filename) {
         if (options.userPermission) {

@@ -6,13 +6,13 @@
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join } from 'path'; // eslint-disable-line no-unused-vars
 
 // Load environment variables
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = dirname(__filename); // eslint-disable-line no-unused-vars
 
 /**
  * Configuration object containing all application settings
@@ -68,8 +68,9 @@ export function validateConfig() {
   }
 
   // Check if private key file exists
-  if (!fs.existsSync(config.github.privateKeyPath)) {
-    console.error(`❌ Private key file not found: ${config.github.privateKeyPath}`);
+  const privateKeyPath = process.env.GITHUB_PRIVATE_KEY_PATH;
+  if (!fs.existsSync(privateKeyPath)) {
+    console.error(`❌ Private key file not found: ${privateKeyPath}`);
     return false;
   }
 

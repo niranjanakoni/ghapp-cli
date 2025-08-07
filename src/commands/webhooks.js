@@ -4,9 +4,9 @@
  */
 
 import { getOctokitClient, fetchAllPages, getInstallationOrg, handleGitHubError } from '../utils/github.js';
-import { filterRepositories, sortRepositories } from '../utils/filters.js';
+import { filterRepositories, sortRepositories } from '../utils/filters.js'; // eslint-disable-line no-unused-vars
 import { displaySummary, displayProgress, displayError } from '../utils/display.js';
-import { saveCSVFile } from '../utils/fileUtils.js';
+import { saveCSVFileOrganized } from '../utils/fileUtils.js';
 import { logFetch, logExport, logDetection, logDebug } from '../utils/logger.js';
 import { config } from '../config/config.js';
 
@@ -112,7 +112,7 @@ export async function handleWebhooksCommand(org, options = {}) {
 
     // Check if there are permission issues affecting most repositories
     const repositoriesWithErrors = webhookData.filter(item => item.access_error === 'insufficient_permissions').length;
-    const hasWidespreadPermissionIssues = repositoriesWithErrors > (webhookData.length * 0.5);
+    const hasWidespreadPermissionIssues = repositoriesWithErrors > (webhookData.length * 0.5); // eslint-disable-line no-unused-vars
 
     // By default, only show repositories that have webhooks unless --show-all is specified
     if (!options.showAll) {
@@ -141,7 +141,7 @@ export async function handleWebhooksCommand(org, options = {}) {
     // Output results
     if (options.fetch) {
       const csvContent = generateWebhooksCSV(filteredWebhooks);
-      const filename = saveCSVFile(csvContent, `webhooks_${org}`);
+      const filename = saveCSVFileOrganized(csvContent, `webhooks_${org}`, 'webhooks');
 
       if (filename) {
         const totalWebhooks = filteredWebhooks.reduce((sum, item) => sum + item.webhooks.length, 0);

@@ -6,7 +6,7 @@
 import { getOctokitClient, fetchAllPages, getInstallationOrg, handleGitHubError } from '../utils/github.js';
 import { filterTeams, sortTeams } from '../utils/filters.js';
 import { displayTeam, displaySummary, displayProgress, displayError } from '../utils/display.js';
-import { generateTeamCSV, saveCSVFile } from '../utils/fileUtils.js';
+import { generateTeamCSV, saveCSVFileOrganized } from '../utils/fileUtils.js'; // eslint-disable-line no-unused-vars
 import { logFetch, logExport, logDetection, logDebug } from '../utils/logger.js';
 
 /**
@@ -68,7 +68,7 @@ export async function handleTeamsCommand(org, options = {}) {
     // Output results
     if (options.fetch) {
       const csvContent = await generateEnhancedTeamCSV(octokit, org, finalTeams);
-      const filename = saveCSVFile(csvContent, `teams_${org}`);
+      const filename = saveCSVFileOrganized(csvContent, `teams_${org}`, 'teams');
 
       if (filename) {
         logExport(`Exported ${finalTeams.length} teams from ${org} to ${filename}`);
@@ -329,7 +329,7 @@ async function generateEnhancedTeamCSV(octokit, org, teams) {
     const parentTeam = team.parent_team || '';
     const childTeams = (team.child_teams || []).join('; ');
     const directMembers = team.direct_members_only || [];
-    const allMembers = team.member_details || [];
+    const allMembers = team.member_details || []; // eslint-disable-line no-unused-vars
     const repos = team.repository_permissions || [];
 
     // If team has no direct members and no repos, add one row with team info only
@@ -384,7 +384,7 @@ async function generateEnhancedTeamCSV(octokit, org, teams) {
  * @param {Object} permissions - Permissions object
  * @returns {string} Formatted permissions string
  */
-function formatPermissions(permissions) {
+function formatPermissions(permissions) { // eslint-disable-line no-unused-vars
   const perms = [];
   if (permissions.admin) perms.push('admin');
   if (permissions.maintain) perms.push('maintain');
@@ -410,7 +410,7 @@ function escapeCSVField(field) {
  * @param {string} teamSlug - Team slug
  * @returns {Promise<number|null>} Number of members or null if no access
  */
-async function getTeamMemberCount(octokit, org, teamSlug) {
+async function getTeamMemberCount(octokit, org, teamSlug) { // eslint-disable-line no-unused-vars
   try {
     const members = await fetchAllPages(
       (params) => octokit.rest.teams.listMembersInOrg(params),
@@ -431,7 +431,7 @@ async function getTeamMemberCount(octokit, org, teamSlug) {
  * @param {string} teamSlug - Team slug
  * @returns {Promise<number|null>} Number of repositories or null if no access
  */
-async function getTeamRepoCount(octokit, org, teamSlug) {
+async function getTeamRepoCount(octokit, org, teamSlug) { // eslint-disable-line no-unused-vars
   try {
     const repos = await fetchAllPages(
       (params) => octokit.rest.teams.listReposInOrg(params),

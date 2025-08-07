@@ -24,17 +24,15 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Run linting (non-blocking)
+    - name: Run linting
       run: |
         echo "Running ESLint..."
-        npm run lint || echo "⚠️ Linting issues found but not blocking build"
-      continue-on-error: true
+        npm run lint
       
-    - name: Run tests (non-blocking)
+    - name: Run tests
       run: |
         echo "Running tests..."
-        npm test || echo "⚠️ Tests failed but not blocking build"
-      continue-on-error: true
+        npm test
       
     - name: Test build process
       run: |
