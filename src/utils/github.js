@@ -4,11 +4,36 @@
  */
 
 import { Octokit } from "@octokit/rest";
-import { createAppAuth } from "@octokit/auth-app";
+import jwt from "jsonwebtoken";
 import { config, getPrivateKey, updateEnvToken, isTokenValid } from "../config/config.js";
 import { logTokenRefresh, logSuccess, logError } from "./logger.js";
 
 let octokitInstance = null;
+
+/**
+ * Creates a JWT token manually for GitHub App authentication
+ * This works around timestamp issues with @octokit/auth-app
+ * @returns {Promise<string>} JWT token
+ */
+async function createManualJWT() {
+  try {
+    // Get current GitHub server time to avoid timestamp issues
+    const response = await fetch('https://api.github.com/');
+    const githubDate = new Date(response.headers.get('date'));
+    const githubTimestamp = Math.floor(githubDate.getTime() / 1000);
+    
+    const payload = {
+      iss: config.github.appId,
+      iat: githubTimestamp - 60,  // Issued 1 minute ago
+      exp: githubTimestamp + 300  // Expires in 5 minutes
+    };
+    
+    const privateKey = getPrivateKey();
+    return jwt.sign(payload, privateKey, { algorithm: 'RS256' });
+  } catch (error) {
+    throw new Error(`Failed to create JWT: ${error.message}`);
+  }
+}
 
 /**
  * Creates and returns an authenticated Octokit client
@@ -24,17 +49,27 @@ export async function getOctokitClient() {
     logTokenRefresh("Refreshing GitHub App installation token...");
 
     try {
-      const auth = createAppAuth({
-        appId: config.github.appId,
-        privateKey: getPrivateKey(),
-        installationId: config.github.installationId,
+      // Use manual JWT creation instead of @octokit/auth-app due to timestamp issues
+      const jwt = await createManualJWT();
+      const response = await fetch(`https://api.github.com/app/installations/${config.github.installationId}/access_tokens`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `Bearer ${jwt}`,
+          'User-Agent': 'ghapp-cli'
+        }
       });
 
-      const installationAuth = await auth({ type: "installation" });
-      token = installationAuth.token;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
+      }
+
+      const tokenData = await response.json();
+      token = tokenData.token;
       
-      updateEnvToken(token, installationAuth.expiresAt);
-      logSuccess(`Token refreshed. Expires at: ${installationAuth.expiresAt}`);
+      updateEnvToken(token, tokenData.expires_at);
+      logSuccess(`Token refreshed. Expires at: ${tokenData.expires_at}`);
       
     } catch (error) {
       logError("Failed to refresh GitHub App token", error);

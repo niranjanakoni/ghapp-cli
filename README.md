@@ -1,23 +1,12 @@
 # GitHub App CLI
 
-A modular, feature-rich command-line interface for interacting with GitHub App APIs. This CLI provides comprehensive functionality for managing repositories, teams, webhooks, and authentication through ### Webhook Options
-
-| Option | Description | Example |
-|--------|-------------|---------|
-| `--repo <name>` | Check webhooks for specific repository only | `--repo myrepo` |
-| `--fetch` | Save data to CSV file instead of displaying | `--fetch` |
-| `--detailed` | Show detailed webhook information | `--detailed` |
-| `--event <type>` | Filter by specific event type | `--event push` |
-| `--active-only` | Show only active webhooks | `--active-only` |
-| `--show-all` | Show all repositories even those without webhooks | `--show-all` |
-| `--sort <field>` | Sort by (repo, webhooks, url, events, created) | `--sort webhooks` |
-| `--order <order>` | Sort order (asc, desc) | `--order desc` |
-| `--stats` | Show webhook statistics | `--stats` |App installation.
+A modular, feature-rich command-line interface for interacting with GitHub App APIs. This CLI provides comprehensive functionality for managing repositories, teams, webhooks, and authentication through GitHub App installation.
 
 ## Features
 
 - **Modular Architecture**: Clean separation of concerns with dedicated modules for each command
 - **Repository Management**: List, filter, sort, and export repository data with advanced filtering
+- **Collaborator Management**: Fetch repository collaborators with their permission levels (NEW!)
 - **Team Management**: Manage organization teams with hierarchy, member roles, and repository permissions
 - **Webhook Management**: Discover, analyze, and export repository webhook configurations
 - **Token Management**: Handle GitHub App authentication with automatic token refresh
@@ -74,6 +63,9 @@ ghapp help
 # List all repositories
 ghapp repos
 
+# 🆕 Export repository collaborators to CSV (NEW!)
+ghapp repos --user-permission --fetch
+
 # List teams (auto-detect organization)
 ghapp teams
 
@@ -99,10 +91,16 @@ ghapp repos --detailed
 # Include user permissions for each repository
 ghapp repos --permissions
 
+# Fetch collaborators and their roles for each repository (NEW!)
+ghapp repos --user-permission --fetch
+
+# Export collaborators to CSV with clean data (only repos with collaborators)
+ghapp repos --user-permission --fetch
+
 # Detailed view with permissions
 ghapp repos --permissions --detailed
 
-# Export to CSV
+# Export repository metrics to CSV
 ghapp repos --fetch
 
 # Filter by specific repositories from CSV
@@ -209,8 +207,9 @@ ghapp help-token
 | `-l, --language <lang>` | Filter by programming language | `--language javascript` |
 | `--repo-csv <file>` | Get specific repositories from CSV file | `--repo-csv repos.csv` |
 | `--detailed` | Show detailed information including description | `--detailed` |
-| `--fetch` | Save data to CSV file instead of displaying | `--fetch` |
+| `--fetch` | Save comprehensive data to CSV file with detailed metrics | `--fetch` |
 | `--permissions` | Include user permissions for each repository | `--permissions` |
+| `--user-permission` | **NEW!** Fetch collaborators and their roles for each repository | `--user-permission --fetch` |
 | `--since <date>` | Filter by last update date (ISO 8601) | `--since 2024-01-01` |
 | `--min-stars <num>` | Minimum number of stars | `--min-stars 10` |
 | `--max-stars <num>` | Maximum number of stars | `--max-stars 1000` |
@@ -241,6 +240,7 @@ ghapp help-token
 | `--detailed` | Show detailed webhook information | `--detailed` |
 | `--event <type>` | Filter by specific event type | `--event push` |
 | `--active-only` | Show only active webhooks | `--active-only` |
+| `--show-all` | Show all repositories even those without webhooks | `--show-all` |
 | `--sort <field>` | Sort by (repo, webhooks, url, events, created) | `--sort webhooks` |
 | `--order <order>` | Sort order (asc, desc) | `--order desc` |
 | `--stats` | Show webhook statistics | `--stats` |
@@ -270,11 +270,68 @@ org/repo-name-2
 another-repo
 ```
 
+### Repository Collaborators CSV Output (NEW!)
+When using `--user-permission --fetch`, generates a clean CSV with only repositories that have direct collaborators:
+
+```csv
+Source_Organization,Source_Repository,Username,Role
+Demo-workshop-org,action-example,vaishnavn02,admin
+Demo-workshop-org,action-example,akshay-canarys,write
+Demo-workshop-org,HelloWebApp,niranjanakoni,admin
+Demo-workshop-org,codeowners-test,ramesh2051,write
+```
+
+#### Collaborators CSV Column Descriptions
+
+| Column | Description |
+|--------|-------------|
+| `Source_Organization` | Organization that owns the repository |
+| `Source_Repository` | Repository name |
+| `Username` | GitHub username of the collaborator |
+| `Role` | Permission level (admin, write, read, maintain, triage) |
+
+**Key Features:**
+- **Direct Collaborators Only**: Shows users explicitly added to repositories (not inherited organization permissions)
+- **Clean Data**: Excludes repositories with no direct collaborators
+- **Accurate Permissions**: Shows actual GitHub API permission levels
+- **Migration Ready**: Perfect for repository access analysis and planning
+
 ### Repository CSV Output
 ```csv
-Name,Full Name,Visibility,Language,Description,Stars,Forks,Size (KB),Last Updated,Clone URL,HTML URL
-my-repo,org/my-repo,private,JavaScript,A sample repository,15,3,1024,2025-01-01T00:00:00Z,https://github.com/org/my-repo.git,https://github.com/org/my-repo
+Org_Name,Repo_Name,Is_Empty,Last_Push,Last_Update,isFork,isArchive,Visibility,Repo_Size(mb),Default_Branch,Issue_Count,Open_Issues,Closed_Issues,PR_Count,Open_PRs,Closed_PRs,PR_Review_Comment_Count,Commit_Comment_Count,Issue_Comment_Count,Release_Count,Project_Count,Branch_Count,Tag_Count,Has_Wiki,Full_URL,Created
+myorg,my-repo,false,2025-01-05T10:30:00Z,2025-01-05T11:00:00Z,false,false,private,2.5,main,25,5,20,15,3,12,45,8,120,3,2,8,12,true,https://github.com/myorg/my-repo,2024-06-15T09:20:00Z
 ```
+
+#### Repository CSV Column Descriptions
+
+| Column | Description |
+|--------|-------------|
+| `Org_Name` | Organization or user name that owns the repository |
+| `Repo_Name` | Repository name |
+| `Is_Empty` | Whether the repository is empty (true/false) |
+| `Last_Push` | Timestamp of the last push to the repository |
+| `Last_Update` | Timestamp when the repository was last updated |
+| `isFork` | Whether this is a forked repository (true/false) |
+| `isArchive` | Whether the repository is archived (true/false) |
+| `Visibility` | Repository visibility (public, private, internal) |
+| `Repo_Size(mb)` | Repository size in megabytes |
+| `Default_Branch` | Name of the default branch (e.g., main, master) |
+| `Issue_Count` | Total number of issues (open + closed) |
+| `Open_Issues` | Number of currently open issues |
+| `Closed_Issues` | Number of closed issues |
+| `PR_Count` | Total number of pull requests (open + closed) |
+| `Open_PRs` | Number of currently open pull requests |
+| `Closed_PRs` | Number of closed/merged pull requests |
+| `PR_Review_Comment_Count` | Total number of pull request review comments |
+| `Commit_Comment_Count` | Total number of commit comments |
+| `Issue_Comment_Count` | Total number of issue comments |
+| `Release_Count` | Number of releases published |
+| `Project_Count` | Number of GitHub projects in the repository |
+| `Branch_Count` | Total number of branches |
+| `Tag_Count` | Total number of tags |
+| `Has_Wiki` | Whether the repository has a wiki enabled (true/false) |
+| `Full_URL` | Complete GitHub URL to the repository |
+| `Created` | Timestamp when the repository was created |
 
 ### Team CSV Output
 ```csv
@@ -314,15 +371,76 @@ ghapp-cli/
 └── README.md              # This file
 ```
 
+## Recent Updates
+
+### 🆕 Version 2.0 - Collaborator Management
+- **NEW**: `--user-permission` flag for repository collaborator analysis
+- **NEW**: Clean CSV export for repository collaborators with direct permissions only
+- **IMPROVED**: Enhanced filtering to exclude inherited organization permissions
+- **ENHANCED**: Better data quality for migration planning and access auditing
+
+## 🆕 Collaborator Management (New Feature!)
+
+The CLI now includes powerful collaborator management capabilities perfect for repository access analysis and migration planning.
+
+### Key Features
+
+- **Direct Collaborators Only**: Fetches users explicitly added to repositories, excluding inherited organization permissions
+- **Clean CSV Export**: Generates clean data with only repositories that have direct collaborators
+- **Accurate Permissions**: Shows actual GitHub API permission levels (`admin`, `write`, `read`, `maintain`, `triage`)
+- **Migration Ready**: Perfect format for analyzing repository access patterns and planning migrations
+
+### Usage Examples
+
+```bash
+# Export all repository collaborators to CSV
+ghapp repos --user-permission --fetch
+
+# View collaborators in terminal (with repository metrics)
+ghapp repos --user-permission
+
+# Combine with repository filtering
+ghapp repos --visibility private --user-permission --fetch
+```
+
+### Sample Output
+
+```csv
+Source_Organization,Source_Repository,Username,Role
+Demo-workshop-org,action-example,vaishnavn02,admin
+Demo-workshop-org,action-example,akshay-canarys,write
+Demo-workshop-org,HelloWebApp,niranjanakoni,admin
+Demo-workshop-org,codeowners-test,ramesh2051,write
+Demo-workshop-org,codeowners-test,nikhilgowda-135,write
+```
+
+### What Makes This Special
+
+1. **Precise Filtering**: Uses GitHub's `affiliation: 'direct'` parameter to exclude organization owners who aren't actual collaborators
+2. **No Noise**: Only includes repositories with actual collaborators (no "No collaborators found" entries)
+3. **Ready for Analysis**: Clean, focused data perfect for understanding repository access patterns
+4. **Migration Planning**: Ideal for planning repository migrations with accurate user permission mapping
+
 ## CSV Export Features
 
 All commands support CSV export with `--fetch` option:
 
+### Repository Collaborators CSV Export (NEW!)
+- Clean collaborator data with direct repository access only
+- Organization, repository, username, and permission level
+- Excludes inherited organization permissions for accurate analysis
+- Perfect for repository access auditing and migration planning
+
 ### Repository CSV Export
-- Repository name, full name, visibility, language
-- Stars, forks, size, creation and update dates
-- Owner information and default branch
-- Topics and description (with `--detailed`)
+- Organization and repository names with metadata
+- Repository status (empty, fork, archived) and visibility
+- Repository size in MB and default branch information
+- Last push and update timestamps, creation date
+- Comprehensive issue tracking (total, open, closed counts)
+- Pull request analytics (total, open, closed counts)
+- Comment activity (PR reviews, commits, issues)
+- Project metrics (releases, projects, branches, tags)
+- Repository features (wiki status) and direct GitHub URLs
 
 ### Team CSV Export
 - Team name, slug, privacy level, description
@@ -368,8 +486,10 @@ Your GitHub App needs the following permissions:
 
 - **Contents**: Read (for repository information)
 - **Metadata**: Read (for basic repository data)
-- **Members**: Read (for team membership information)
+- **Members**: Read (for team membership information and collaborator access)
 - **Administration**: Read (for webhook configuration access)
+
+**Note**: The new collaborator management feature requires the **Members** permission to access repository collaborator information and permission levels.
 
 ## Development
 
@@ -482,6 +602,36 @@ This implementation addresses all requirements from `requirements.md`:
 ## License
 
 MIT License - see LICENSE file for details.
+
+## Quick Reference
+
+### Most Common Commands
+
+```bash
+# Repository analysis and metrics
+ghapp repos --fetch                           # Export all repository metrics
+ghapp repos --user-permission --fetch         # Export repository collaborators (NEW!)
+ghapp repos --visibility private --fetch      # Export private repositories only
+
+# Organization team analysis  
+ghapp teams --fetch                           # Export team structure and members
+
+# Webhook analysis
+ghapp webhooks --fetch                        # Export webhook configurations
+
+# Token management
+ghapp token                                   # Check token status
+ghapp token --refresh                         # Force token refresh
+```
+
+### Data Export Formats
+
+| Command | Output File | Contains |
+|---------|-------------|----------|
+| `ghapp repos --fetch` | `repositories_TIMESTAMP.csv` | 26 columns of repository metrics |
+| `ghapp repos --user-permission --fetch` | `collaborators_TIMESTAMP.csv` | 4 columns of collaborator data |
+| `ghapp teams --fetch` | `teams_TIMESTAMP.csv` | Team structure and member counts |
+| `ghapp webhooks --fetch` | `webhooks_TIMESTAMP.csv` | Webhook configurations |
 
 ## Support
 

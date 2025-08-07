@@ -8,55 +8,103 @@ import path from "path";
 import { logFile, logError, logSuccess } from "./logger.js";
 
 /**
+ * Generates CSV content from repository collaborator data
+ * @param {Array} repos - Array of repository objects with collaborators
+ * @returns {string} CSV formatted string
+ */
+export function generateCollaboratorCSV(repos) {
+  const headers = [
+    'Source_Organization',
+    'Source_Repository', 
+    'Username',
+    'Role'
+  ];
+  
+  const rows = [];
+  
+  repos.forEach(repo => {
+    if (repo.collaborators && repo.collaborators.length > 0) {
+      repo.collaborators.forEach(collab => {
+        const role = collab.originalRole || collab.role || '';
+        
+        rows.push([
+          repo.owner?.login || '',           // Source Organization
+          repo.name || '',                   // Source Repository
+          collab.username || '',             // Username
+          role                               // Role (was Original_Permission)
+        ]);
+      });
+    }
+    // Remove the "No collaborators found" rows - don't add anything if no collaborators
+  });
+  
+  return formatCSVContent(headers, rows);
+}
+
+/**
  * Generates CSV content from repository data
  * @param {Array} repos - Array of repository objects
  * @returns {string} CSV formatted string
  */
 export function generateRepositoryCSV(repos) {
-  // Check if any repository has permission data
-  const hasPermissions = repos.some(repo => repo.user_permission);
-  
   const headers = [
-    'Name',
-    'Full Name',
+    'Org_Name',
+    'Repo_Name',
+    'Is_Empty',
+    'Last_Push',
+    'Last_Update',
+    'isFork',
+    'isArchive',
     'Visibility',
-    'Language',
-    'Description',
-    'Stars',
-    'Forks',
-    'Size (KB)',
-    'Last Updated',
-    'Clone URL',
-    'HTML URL'
+    'Repo_Size(mb)',
+    'Default_Branch',
+    'Issue_Count',
+    'Open_Issues',
+    'Closed_Issues',
+    'PR_Count',
+    'Open_PRs',
+    'Closed_PRs',
+    'PR_Review_Comment_Count',
+    'Commit_Comment_Count',
+    'Issue_Comment_Count',
+    'Release_Count',
+    'Project_Count',
+    'Branch_Count',
+    'Tag_Count',
+    'Has_Wiki',
+    'Full_URL',
+    'Created'
   ];
-  
-  // Add permission columns if permission data is available
-  if (hasPermissions) {
-    headers.push('User Permission', 'Role Name');
-  }
   
   const rows = repos.map(repo => {
     const row = [
+      repo.owner?.login || '',
       repo.name || '',
-      repo.full_name || '',
-      repo.visibility || (repo.private ? 'private' : 'public'),
-      repo.language || '',
-      escapeCSVField(repo.description || ''),
-      repo.stargazers_count || 0,
-      repo.forks_count || 0,
-      repo.size || 0,
+      repo.isEmpty ? 'true' : 'false',
+      repo.pushed_at || '',
       repo.updated_at || '',
-      repo.clone_url || '',
-      repo.html_url || ''
+      repo.fork ? 'true' : 'false',
+      repo.archived ? 'true' : 'false',
+      repo.visibility || (repo.private ? 'private' : 'public'),
+      Math.round((repo.size || 0) / 1024), // Convert KB to MB
+      repo.default_branch || '',
+      repo.issueCount || 0,
+      repo.openIssues || 0,
+      repo.closedIssues || 0,
+      repo.prCount || 0,
+      repo.openPRs || 0,
+      repo.closedPRs || 0,
+      repo.prReviewCommentCount || 0,
+      repo.commitCommentCount || 0,
+      repo.issueCommentCount || 0,
+      repo.releaseCount || 0,
+      repo.projectCount || 0,
+      repo.branchCount || 0,
+      repo.tagCount || 0,
+      repo.has_wiki ? 'true' : 'false',
+      repo.html_url || '',
+      repo.created_at || ''
     ];
-    
-    // Add permission data if available
-    if (hasPermissions) {
-      row.push(
-        repo.user_permission ? repo.user_permission.permission : '',
-        repo.user_permission ? (repo.user_permission.role_name || '') : ''
-      );
-    }
     
     return row;
   });

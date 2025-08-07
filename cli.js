@@ -69,6 +69,7 @@ program
   .option("--detailed", "Show detailed information including description")
   .option("--fetch", "Save data to CSV file instead of displaying")
   .option("--permissions", "Include user permissions for each repository")
+  .option("--user-permission", "Fetch collaborators and their roles for each repository")
   .option("--since <date>", "Filter by last update date (ISO 8601)")
   .option("--min-stars <num>", "Minimum number of stars", parseInt)
   .option("--max-stars <num>", "Maximum number of stars", parseInt)

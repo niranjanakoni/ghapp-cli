@@ -61,7 +61,7 @@ export function handleReposHelpCommand() {
       { flags: '-l, --language <lang>', description: 'Filter by programming language' },
       { flags: '--repo-csv <file>', description: 'Get specific repositories from CSV file' },
       { flags: '--detailed', description: 'Show detailed repository information' },
-      { flags: '--fetch', description: 'Export to CSV file instead of displaying' },
+      { flags: '--fetch', description: 'Export to CSV file with detailed metrics instead of displaying' },
       { flags: '--permissions', description: 'Include user permissions for each repository' },
       { flags: '--since <date>', description: 'Filter by last update date (ISO 8601)' },
       { flags: '--min-stars <num>', description: 'Minimum number of stars' },
@@ -79,7 +79,7 @@ export function handleReposHelpCommand() {
       { command: 'ghapp repos --detailed', description: 'Show detailed information' },
       { command: 'ghapp repos --permissions', description: 'Include user permissions for each repo' },
       { command: 'ghapp repos --permissions --detailed', description: 'Detailed view with permissions' },
-      { command: 'ghapp repos --fetch', description: 'Save to CSV file' },
+      { command: 'ghapp repos --fetch', description: 'Save to CSV file with detailed metrics' },
       { command: 'ghapp repos --min-stars 10', description: 'Repositories with 10+ stars' },
       { command: 'ghapp repos --sort stars --order desc', description: 'Sort by stars (most first)' },
       { command: 'ghapp repos --since 2024-01-01', description: 'Updated since Jan 1, 2024' }
@@ -87,11 +87,12 @@ export function handleReposHelpCommand() {
     
     notes: [
       'CSV input format: repository names, one per line',
-      'Output CSV includes: name, visibility, language, stars, forks, etc.',
+      'Output CSV includes: org name, repo name, empty status, dates, counts for issues/PRs/releases, etc.',
       'Files are saved with timestamp: repositories_YYYY-MM-DDTHH-mm-ss-SSSZ.csv',
-      'Use --detailed for description, URLs, and additional metrics',
+      'Use --detailed for description, URLs, and additional metrics in console output',
+      'Use --fetch for comprehensive repository analytics CSV export',
       'Permissions: admin (🔴), maintain (🟠), write (🟡), triage (🔵), read (🟢), none (⚪)',
-      '--permissions may take longer as it requires additional API calls per repository'
+      '--permissions and --fetch may take longer as they require additional API calls per repository'
     ]
   };
   

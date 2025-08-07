@@ -2,3 +2,12 @@ private-key.pem
 .env
 node_modules/
 dist/
+
+# Output files
+*.csv
+repositories_*.csv
+collaborators_*.csv
+
+# Test temporary files
+test-temp/
+temp/
