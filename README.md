@@ -88,17 +88,11 @@ ghapp repos --language javascript
 # Show detailed information
 ghapp repos --detailed
 
-# Include user permissions for each repository
-ghapp repos --permissions
-
-# Fetch collaborators and their roles for each repository (NEW!)
+# Fetch collaborators and their roles for each repository
 ghapp repos --user-permission --fetch
 
 # Export collaborators to CSV with clean data (only repos with collaborators)
 ghapp repos --user-permission --fetch
-
-# Detailed view with permissions
-ghapp repos --permissions --detailed
 
 # Export repository metrics to CSV
 ghapp repos --fetch
@@ -208,7 +202,6 @@ ghapp help-token
 | `--repo-csv <file>` | Get specific repositories from CSV file | `--repo-csv repos.csv` |
 | `--detailed` | Show detailed information including description | `--detailed` |
 | `--fetch` | Save comprehensive data to CSV file with detailed metrics | `--fetch` |
-| `--permissions` | Include user permissions for each repository | `--permissions` |
 | `--user-permission` | **NEW!** Fetch collaborators and their roles for each repository | `--user-permission --fetch` |
 | `--since <date>` | Filter by last update date (ISO 8601) | `--since 2024-01-01` |
 | `--min-stars <num>` | Minimum number of stars | `--min-stars 10` |

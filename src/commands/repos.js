@@ -18,7 +18,6 @@ import { logFetch, logExport, logDebug } from "../utils/logger.js";
  * @param {string} [options.repoCsv] - Get specific repositories from CSV file
  * @param {boolean} [options.detailed] - Show detailed information
  * @param {boolean} [options.fetch] - Save data to CSV file with detailed metrics instead of displaying
- * @param {boolean} [options.permissions] - Include user permissions for each repository
  * @param {boolean} [options.userPermission] - Fetch collaborators and their roles for each repository
  * @param {string} [options.since] - Filter by last update date
  * @param {number} [options.minStars] - Minimum number of stars
@@ -63,13 +62,13 @@ export async function handleRepositoriesCommand(options = {}) {
     repos = filterRepositories(repos, options);
     
     // Enrich with permissions if requested
-    if (options.permissions || options.userPermission) {
+    if (options.userPermission) {
       logFetch("Fetching user permissions for repositories...");
       repos = await enrichRepositoriesWithPermissions(octokit, repos);
     }
 
     // Enrich with detailed metrics if fetching to CSV (but not if permissions are requested)
-    if (options.fetch && !options.permissions && !options.userPermission) {
+    if (options.fetch && !options.userPermission) {
       logFetch("Fetching detailed metrics for repositories...");
       repos = await enrichRepositoriesWithDetailedMetrics(octokit, repos);
     }
@@ -84,7 +83,7 @@ export async function handleRepositoriesCommand(options = {}) {
       let csvContent;
       let filenamePrefix;
       
-      if (options.permissions || options.userPermission) {
+      if (options.userPermission) {
         // Generate collaborator CSV when permissions are requested
         csvContent = generateCollaboratorCSV(repos);
         filenamePrefix = 'collaborators';
@@ -97,7 +96,7 @@ export async function handleRepositoriesCommand(options = {}) {
       const filename = saveCSVFile(csvContent, filenamePrefix);
       
       if (filename) {
-        if (options.permissions || options.userPermission) {
+        if (options.userPermission) {
           logExport(`Exported collaborators from ${repos.length} repositories to ${filename}`);
         } else {
           logExport(`Exported ${repos.length} repositories to ${filename}`);
