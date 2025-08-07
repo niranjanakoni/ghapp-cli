@@ -8,6 +8,9 @@ on:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     
     steps:
     - name: Checkout code
@@ -207,3 +210,4 @@ jobs:
           - See [USER_INSTALLATION_GUIDE.md](https://github.com/${{ github.repository }}/blob/main/USER_INSTALLATION_GUIDE.md) for detailed instructions
           
           No technical knowledge required - just download, extract, and use! 🎉
+        token: ${{ secrets.GITHUB_TOKEN }}
