@@ -14,7 +14,19 @@
     "lint": "eslint src/ cli.js",
     "lint:fix": "eslint src/ cli.js --fix",
     "dev": "node --watch cli.js",
-    "build": "echo 'No build step required for this project'",
+    "bundle": "ncc build cli.js -o build --minify",
+    "build": "npm run bundle && npm run package",
+    "package": "npm run package:all",
+    "package:all": "npm run package:windows && npm run package:macos && npm run package:linux",
+    "package:windows": "npm run create:windows:wrapper && npm run create:windows:package",
+    "package:macos": "npm run create:unix:wrapper && npm run create:macos:package", 
+    "package:linux": "npm run create:unix:wrapper && npm run create:linux:package",
+    "create:windows:wrapper": "echo @echo off > dist/ghapp.bat && echo node \"%%~dp0build\\index.js\" %%* >> dist/ghapp.bat",
+    "create:unix:wrapper": "echo '#!/bin/bash' > dist/ghapp && echo 'DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" &> /dev/null && pwd )\"' >> dist/ghapp && echo 'node \"$DIR/build/index.js\" \"$@\"' >> dist/ghapp && chmod +x dist/ghapp",
+    "create:windows:package": "if not exist dist\\packages mkdir dist\\packages && xcopy /E /I build dist\\packages\\ghapp-win\\build\\ && copy dist\\ghapp.bat dist\\packages\\ghapp-win\\ghapp.bat",
+    "create:macos:package": "mkdir -p dist/packages/ghapp-macos && cp -r build dist/packages/ghapp-macos/ && cp dist/ghapp dist/packages/ghapp-macos/ghapp",
+    "create:linux:package": "mkdir -p dist/packages/ghapp-linux && cp -r build dist/packages/ghapp-linux/ && cp dist/ghapp dist/packages/ghapp-linux/ghapp",
+    "clean": "rmdir /s /q dist build 2>nul || rm -rf dist build",
     "validate": "node -e \"import('./src/config/config.js').then(({validateConfig}) => process.exit(validateConfig() ? 0 : 1))\""
   },
   "dependencies": {
@@ -25,11 +37,16 @@
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
+    "@vercel/ncc": "^0.38.3",
+    "caxa": "^3.0.1",
+    "esbuild": "^0.25.8",
     "eslint": "^8.0.0",
     "eslint-config-standard": "^17.0.0",
     "eslint-plugin-import": "^2.0.0",
     "eslint-plugin-n": "^15.0.0",
-    "eslint-plugin-promise": "^6.0.0"
+    "eslint-plugin-promise": "^6.0.0",
+    "nexe": "^5.0.0-beta.4",
+    "pkg": "^5.8.1"
   },
   "keywords": [
     "github",
@@ -48,6 +65,17 @@
   },
   "bugs": {
     "url": "https://github.com/your-org/ghapp-cli/issues"
+  },
+  "pkg": {
+    "assets": [
+      "src/**/*",
+      "private-key.pem"
+    ],
+    "targets": [
+      "node18-win-x64",
+      "node18-macos-x64",
+      "node18-linux-x64"
+    ]
   },
   "homepage": "https://github.com/your-org/ghapp-cli#readme",
   "engines": {

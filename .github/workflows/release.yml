@@ -1,0 +1,212 @@
+name: Build and Release Binaries
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests
+      run: npm test
+      
+    - name: Build packages
+      run: |
+        npm run bundle
+        
+        # Create distribution packages
+        mkdir -p dist/packages
+        
+        # Windows package
+        mkdir -p dist/packages/ghapp-win
+        cp -r build dist/packages/ghapp-win/
+        echo '@echo off' > dist/packages/ghapp-win/ghapp.bat
+        echo 'node "%~dp0build\index.js" %*' >> dist/packages/ghapp-win/ghapp.bat
+        
+        # Create install.bat for Windows
+        cat > dist/packages/ghapp-win/install.bat << 'EOF'
+        @echo off
+        echo Installing ghapp-cli...
+        set "INSTALL_DIR=%~dp0"
+        if "%INSTALL_DIR:~-1%"=="\" set "INSTALL_DIR=%INSTALL_DIR:~0,-1%"
+        echo Installation directory: %INSTALL_DIR%
+        
+        echo %PATH% | find /i "%INSTALL_DIR%" >nul
+        if %errorlevel%==0 (
+            echo ghapp-cli is already in PATH
+            goto :test
+        )
+        
+        for /f "tokens=2*" %%A in ('reg query HKCU\Environment /v PATH 2^>nul') do set "CURRENT_PATH=%%B"
+        if not defined CURRENT_PATH set "CURRENT_PATH="
+        
+        echo %CURRENT_PATH% | find /i "%INSTALL_DIR%" >nul
+        if %errorlevel%==0 (
+            echo Directory already in PATH
+            goto :test
+        )
+        
+        if defined CURRENT_PATH (
+            reg add HKCU\Environment /v PATH /t REG_EXPAND_SZ /d "%CURRENT_PATH%;%INSTALL_DIR%" /f >nul
+        ) else (
+            reg add HKCU\Environment /v PATH /t REG_EXPAND_SZ /d "%INSTALL_DIR%" /f >nul
+        )
+        
+        if %errorlevel%==0 (
+            echo Successfully added to PATH
+            echo Please restart your command prompt
+        ) else (
+            echo Failed to add to PATH. Add "%INSTALL_DIR%" to PATH manually.
+        )
+        
+        :test
+        echo Testing installation...
+        call "%INSTALL_DIR%\ghapp.bat" --version
+        if %errorlevel%==0 (
+            echo Installation successful!
+        ) else (
+            echo Installation test failed
+        )
+        pause
+        EOF
+        
+        # macOS package
+        mkdir -p dist/packages/ghapp-macos
+        cp -r build dist/packages/ghapp-macos/
+        cat > dist/packages/ghapp-macos/ghapp << 'EOF'
+        #!/bin/bash
+        DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+        node "$DIR/build/index.js" "$@"
+        EOF
+        chmod +x dist/packages/ghapp-macos/ghapp
+        
+        # Linux package
+        mkdir -p dist/packages/ghapp-linux
+        cp -r build dist/packages/ghapp-linux/
+        cat > dist/packages/ghapp-linux/ghapp << 'EOF'
+        #!/bin/bash
+        DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+        node "$DIR/build/index.js" "$@"
+        EOF
+        chmod +x dist/packages/ghapp-linux/ghapp
+        
+        # Create README for packages
+        cat > dist/packages/README.md << 'EOF'
+        # ghapp-cli Distribution Packages
+        
+        ## Requirements
+        - Node.js must be installed on your system
+        - Download from: https://nodejs.org
+        
+        ## Windows (ghapp-win)
+        1. Extract the package
+        2. Run `install.bat` for automatic installation
+        3. Or use `ghapp.bat --help` directly
+        
+        ## macOS/Linux (ghapp-macos, ghapp-linux)
+        1. Extract the package
+        2. Run: `chmod +x ghapp`
+        3. Use: `./ghapp --help`
+        
+        ## System-wide Installation
+        Add the package directory to your PATH environment variable.
+        
+        For detailed instructions, see: USER_INSTALLATION_GUIDE.md
+        EOF
+        
+    - name: Create archives
+      run: |
+        cd dist/packages
+        
+        # Create Windows zip
+        zip -r ghapp-win.zip ghapp-win/
+        
+        # Create macOS tar.gz
+        tar -czf ghapp-macos.tar.gz ghapp-macos/
+        
+        # Create Linux tar.gz  
+        tar -czf ghapp-linux.tar.gz ghapp-linux/
+        
+        # Create a combined archive with all platforms
+        mkdir -p ghapp-all-platforms
+        cp -r ghapp-win ghapp-all-platforms/
+        cp -r ghapp-macos ghapp-all-platforms/
+        cp -r ghapp-linux ghapp-all-platforms/
+        cp README.md ghapp-all-platforms/
+        
+        # Create installation guide for all platforms
+        cat > ghapp-all-platforms/INSTALL.md << 'INSTALLEOF'
+        # ghapp-cli - Cross-Platform Installation
+        
+        This package contains binaries for all operating systems.
+        
+        ## Windows
+        1. Go to `ghapp-win/` folder
+        2. Run `install.bat` for automatic installation
+        3. Or use `ghapp.bat --help` directly
+        
+        ## macOS
+        1. Go to `ghapp-macos/` folder  
+        2. Run: `chmod +x ghapp && ./ghapp --help`
+        
+        ## Linux
+        1. Go to `ghapp-linux/` folder
+        2. Run: `chmod +x ghapp && ./ghapp --help`
+        
+        ## Requirements
+        - Node.js must be installed on your system
+        - Download from: https://nodejs.org
+        INSTALLEOF
+        
+        zip -r ghapp-all-platforms.zip ghapp-all-platforms/
+        tar -czf ghapp-all-platforms.tar.gz ghapp-all-platforms/
+        
+    - name: Upload Release Assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/packages/ghapp-win.zip
+          dist/packages/ghapp-macos.tar.gz
+          dist/packages/ghapp-linux.tar.gz
+          dist/packages/ghapp-all-platforms.zip
+          dist/packages/ghapp-all-platforms.tar.gz
+        body: |
+          ## 🚀 ghapp-cli Release
+          
+          Download the appropriate package for your operating system:
+          
+          ### Individual Platform Downloads
+          - **Windows**: `ghapp-win.zip` 
+          - **macOS**: `ghapp-macos.tar.gz`
+          - **Linux**: `ghapp-linux.tar.gz`
+          
+          ### All Platforms (Single Download)
+          - **All-in-One**: `ghapp-all-platforms.zip` or `ghapp-all-platforms.tar.gz`
+          
+          ### Quick Start
+          1. Download the package for your OS
+          2. Extract the archive
+          3. Follow the instructions in the included README/INSTALL files
+          
+          ### Requirements
+          - Node.js installed on your system ([Download here](https://nodejs.org))
+          
+          ### Installation Guides
+          - See [USER_INSTALLATION_GUIDE.md](https://github.com/${{ github.repository }}/blob/main/USER_INSTALLATION_GUIDE.md) for detailed instructions
+          
+          No technical knowledge required - just download, extract, and use! 🎉
