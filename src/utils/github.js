@@ -3,10 +3,10 @@
  * Handles GitHub API interactions and pagination
  */
 
-import { Octokit } from "@octokit/rest";
-import jwt from "jsonwebtoken";
-import { config, getPrivateKey, updateEnvToken, isTokenValid } from "../config/config.js";
-import { logTokenRefresh, logSuccess, logError } from "./logger.js";
+import { Octokit } from '@octokit/rest';
+import jwt from 'jsonwebtoken';
+import { config, getPrivateKey, updateEnvToken, isTokenValid } from '../config/config.js';
+import { logTokenRefresh, logSuccess, logError } from './logger.js';
 
 let octokitInstance = null;
 
@@ -21,13 +21,13 @@ async function createManualJWT() {
     const response = await fetch('https://api.github.com/');
     const githubDate = new Date(response.headers.get('date'));
     const githubTimestamp = Math.floor(githubDate.getTime() / 1000);
-    
+
     const payload = {
       iss: config.github.appId,
-      iat: githubTimestamp - 60,  // Issued 1 minute ago
-      exp: githubTimestamp + 300  // Expires in 5 minutes
+      iat: githubTimestamp - 60, // Issued 1 minute ago
+      exp: githubTimestamp + 300 // Expires in 5 minutes
     };
-    
+
     const privateKey = getPrivateKey();
     return jwt.sign(payload, privateKey, { algorithm: 'RS256' });
   } catch (error) {
@@ -46,7 +46,7 @@ export async function getOctokitClient() {
 
   // Check if we need to refresh the token
   if (!token || !isTokenValid(expiresAt)) {
-    logTokenRefresh("Refreshing GitHub App installation token...");
+    logTokenRefresh('Refreshing GitHub App installation token...');
 
     try {
       // Use manual JWT creation instead of @octokit/auth-app due to timestamp issues
@@ -54,8 +54,8 @@ export async function getOctokitClient() {
       const response = await fetch(`https://api.github.com/app/installations/${config.github.installationId}/access_tokens`, {
         method: 'POST',
         headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          'Authorization': `Bearer ${jwt}`,
+          Accept: 'application/vnd.github.v3+json',
+          Authorization: `Bearer ${jwt}`,
           'User-Agent': 'ghapp-cli'
         }
       });
@@ -67,12 +67,11 @@ export async function getOctokitClient() {
 
       const tokenData = await response.json();
       token = tokenData.token;
-      
+
       updateEnvToken(token, tokenData.expires_at);
       logSuccess(`Token refreshed. Expires at: ${tokenData.expires_at}`);
-      
     } catch (error) {
-      logError("Failed to refresh GitHub App token", error);
+      logError('Failed to refresh GitHub App token', error);
       throw error;
     }
   }
@@ -96,34 +95,34 @@ export async function fetchAllPages(apiCall, options = {}) {
   const results = [];
   let currentPage = 1;
   const perPage = Math.min(options.perPage || config.api.defaultPerPage, config.api.maxPerPage);
-  
+
   try {
     while (true) {
-      const response = await apiCall({ 
-        ...options, 
-        page: currentPage, 
-        per_page: perPage 
+      const response = await apiCall({
+        ...options,
+        page: currentPage,
+        per_page: perPage
       });
-      
+
       // Handle different response structures
-      const data = Array.isArray(response.data) 
-        ? response.data 
+      const data = Array.isArray(response.data)
+        ? response.data
         : response.data.repositories || response.data.items || [];
-      
+
       results.push(...data);
-      
+
       // Check if we've reached the last page
       if (data.length < perPage) {
         break;
       }
-      
+
       currentPage++;
     }
   } catch (error) {
     logError(`Error during paginated fetch: ${error.message}`, error);
     throw error;
   }
-  
+
   return results;
 }
 
@@ -137,14 +136,14 @@ export async function getInstallationOrg(octokit) {
     const { data } = await octokit.rest.apps.listReposAccessibleToInstallation({
       per_page: 1
     });
-    
+
     if (data.repositories && data.repositories.length > 0) {
       const firstRepo = data.repositories[0];
       if (firstRepo.owner && firstRepo.owner.type === 'Organization') {
         return firstRepo.owner.login;
       }
     }
-    
+
     return null;
   } catch (error) {
     logError(`Error detecting organization: ${error.message}`, error);
@@ -157,26 +156,26 @@ export async function getInstallationOrg(octokit) {
  * @param {Error} error - The error object from GitHub API
  * @param {string} context - Context where the error occurred
  */
-export function handleGitHubError(error, context = "") {
-  const contextMsg = context ? ` during ${context}` : "";
-  
+export function handleGitHubError(error, context = '') {
+  const contextMsg = context ? ` during ${context}` : '';
+
   switch (error.status) {
-    case 401:
-      logError(`Authentication failed${contextMsg}. Please check your GitHub App credentials.`);
-      break;
-    case 403:
-      logError(`Access forbidden${contextMsg}. Check your GitHub App permissions.`);
-      break;
-    case 404:
-      logError(`Resource not found${contextMsg}. Verify the organization/repository exists and is accessible.`);
-      break;
-    case 422:
-      logError(`Invalid request${contextMsg}. Check your parameters.`);
-      break;
-    case 500:
-      logError(`GitHub server error${contextMsg}. Please try again later.`);
-      break;
-    default:
-      logError(`GitHub API error${contextMsg}: ${error.message}`, error);
+  case 401:
+    logError(`Authentication failed${contextMsg}. Please check your GitHub App credentials.`);
+    break;
+  case 403:
+    logError(`Access forbidden${contextMsg}. Check your GitHub App permissions.`);
+    break;
+  case 404:
+    logError(`Resource not found${contextMsg}. Verify the organization/repository exists and is accessible.`);
+    break;
+  case 422:
+    logError(`Invalid request${contextMsg}. Check your parameters.`);
+    break;
+  case 500:
+    logError(`GitHub server error${contextMsg}. Please try again later.`);
+    break;
+  default:
+    logError(`GitHub API error${contextMsg}: ${error.message}`, error);
   }
 }

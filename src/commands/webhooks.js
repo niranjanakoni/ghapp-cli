@@ -3,12 +3,12 @@
  * Handles listing and managing GitHub repository webhooks
  */
 
-import { getOctokitClient, fetchAllPages, getInstallationOrg, handleGitHubError } from "../utils/github.js";
-import { filterRepositories, sortRepositories } from "../utils/filters.js";
-import { displaySummary, displayProgress, displayError } from "../utils/display.js";
-import { saveCSVFile } from "../utils/fileUtils.js";
-import { logFetch, logExport, logDetection, logDebug } from "../utils/logger.js";
-import { config } from "../config/config.js";
+import { getOctokitClient, fetchAllPages, getInstallationOrg, handleGitHubError } from '../utils/github.js';
+import { filterRepositories, sortRepositories } from '../utils/filters.js';
+import { displaySummary, displayProgress, displayError } from '../utils/display.js';
+import { saveCSVFile } from '../utils/fileUtils.js';
+import { logFetch, logExport, logDetection, logDebug } from '../utils/logger.js';
+import { config } from '../config/config.js';
 
 /**
  * Fetches paginated data quietly (without logging permission errors)
@@ -20,29 +20,29 @@ async function fetchAllPagesQuietly(apiCall, options = {}) {
   const results = [];
   let currentPage = 1;
   const perPage = Math.min(options.perPage || config.api.defaultPerPage, config.api.maxPerPage);
-  
+
   while (true) {
-    const response = await apiCall({ 
-      ...options, 
-      page: currentPage, 
-      per_page: perPage 
+    const response = await apiCall({
+      ...options,
+      page: currentPage,
+      per_page: perPage
     });
-    
+
     // Handle different response structures
-    const data = Array.isArray(response.data) 
-      ? response.data 
+    const data = Array.isArray(response.data)
+      ? response.data
       : response.data.repositories || response.data.items || [];
-    
+
     results.push(...data);
-    
+
     // Check if we've reached the last page
     if (data.length < perPage) {
       break;
     }
-    
+
     currentPage++;
   }
-  
+
   return results;
 }
 
@@ -65,19 +65,19 @@ export async function handleWebhooksCommand(org, options = {}) {
 
     // Auto-detect organization if not provided
     if (!org) {
-      logDetection("No organization specified, detecting from GitHub App installation...");
+      logDetection('No organization specified, detecting from GitHub App installation...');
       org = await getInstallationOrg(octokit);
-      
+
       if (!org) {
-        displayError("organization detection", new Error("Could not auto-detect organization. Please specify: ghapp webhooks <org>"));
+        displayError('organization detection', new Error('Could not auto-detect organization. Please specify: ghapp webhooks <org>'));
         return;
       }
-      
+
       logDetection(`Detected organization: ${org}`);
     }
 
     let repositories = [];
-    
+
     if (options.repo) {
       // Check specific repository
       logFetch(`Fetching webhooks for repository ${org}/${options.repo}...`);
@@ -89,7 +89,7 @@ export async function handleWebhooksCommand(org, options = {}) {
         repositories = [repo];
       } catch (error) {
         if (error.status === 404) {
-          displayError("fetching repository", new Error(`Repository '${org}/${options.repo}' not found or not accessible`));
+          displayError('fetching repository', new Error(`Repository '${org}/${options.repo}' not found or not accessible`));
           return;
         }
         throw error;
@@ -104,31 +104,31 @@ export async function handleWebhooksCommand(org, options = {}) {
     }
 
     // Fetch webhook details for each repository
-    logFetch("Fetching webhook details for repositories...");
+    logFetch('Fetching webhook details for repositories...');
     const webhookData = await enrichRepositoriesWithWebhooks(octokit, org, repositories);
 
     // Filter webhooks based on options
     let filteredWebhooks = webhookData;
-    
+
     // Check if there are permission issues affecting most repositories
     const repositoriesWithErrors = webhookData.filter(item => item.access_error === 'insufficient_permissions').length;
     const hasWidespreadPermissionIssues = repositoriesWithErrors > (webhookData.length * 0.5);
-    
+
     // By default, only show repositories that have webhooks unless --show-all is specified
     if (!options.showAll) {
-      filteredWebhooks = filteredWebhooks.filter(item => 
+      filteredWebhooks = filteredWebhooks.filter(item =>
         item.webhooks.length > 0
       );
     }
-    
+
     if (options.event) {
-      filteredWebhooks = filteredWebhooks.filter(item => 
+      filteredWebhooks = filteredWebhooks.filter(item =>
         item.webhooks.some(webhook => webhook.events.includes(options.event))
       );
     }
-    
+
     if (options.activeOnly) {
-      filteredWebhooks = filteredWebhooks.filter(item => 
+      filteredWebhooks = filteredWebhooks.filter(item =>
         item.webhooks.some(webhook => webhook.active)
       );
     }
@@ -142,31 +142,30 @@ export async function handleWebhooksCommand(org, options = {}) {
     if (options.fetch) {
       const csvContent = generateWebhooksCSV(filteredWebhooks);
       const filename = saveCSVFile(csvContent, `webhooks_${org}`);
-      
+
       if (filename) {
         const totalWebhooks = filteredWebhooks.reduce((sum, item) => sum + item.webhooks.length, 0);
         logExport(`Exported ${totalWebhooks} webhooks from ${filteredWebhooks.length} repositories in ${org} to ${filename}`);
       }
     } else {
       const totalWebhooks = filteredWebhooks.reduce((sum, item) => sum + item.webhooks.length, 0);
-      
+
       // Show information about filtering
       if (!options.showAll && webhookData.length > filteredWebhooks.length) {
         const hiddenCount = webhookData.length - filteredWebhooks.length;
         console.log(`\n🔍 Showing ${filteredWebhooks.length} repositories with webhooks (hiding ${hiddenCount} repositories without webhooks).`);
-        console.log("   Use --show-all to display all repositories including those without webhooks.\n");
+        console.log('   Use --show-all to display all repositories including those without webhooks.\n');
       }
-      
+
       displaySummary('webhooks', totalWebhooks, `across ${filteredWebhooks.length} repositories in ${org}`);
-      
+
       filteredWebhooks.forEach((item) => displayRepositoryWebhooks(item, options.detailed));
     }
-
   } catch (error) {
     if (error.status === 404) {
-      displayError("fetching webhooks", new Error(`Organization '${org}' not found or not accessible`));
+      displayError('fetching webhooks', new Error(`Organization '${org}' not found or not accessible`));
     } else {
-      handleGitHubError(error, "fetching webhooks");
+      handleGitHubError(error, 'fetching webhooks');
     }
   }
 }
@@ -182,12 +181,12 @@ async function enrichRepositoriesWithWebhooks(octokit, org, repositories) {
   const enrichedData = [];
   let permissionErrorCount = 0;
   let hasShownPermissionWarning = false;
-  
+
   for (let i = 0; i < repositories.length; i++) {
     const repo = repositories[i];
-    
-    displayProgress("Fetching webhook data", i + 1, repositories.length);
-    
+
+    displayProgress('Fetching webhook data', i + 1, repositories.length);
+
     try {
       // Get webhooks for this repository
       const webhooks = await fetchAllPagesQuietly(
@@ -225,7 +224,7 @@ async function enrichRepositoriesWithWebhooks(octokit, org, repositories) {
           });
         } catch (webhookError) {
           logDebug(`Cannot get details for webhook ${webhook.id} in ${repo.name}: ${webhookError.message}`);
-          
+
           // Add basic webhook info even if detailed fetch fails
           enrichedWebhooks.push({
             id: webhook.id,
@@ -253,26 +252,25 @@ async function enrichRepositoriesWithWebhooks(octokit, org, repositories) {
         webhooks: enrichedWebhooks,
         webhook_count: enrichedWebhooks.length
       });
-
     } catch (error) {
       // Handle permission errors more gracefully
-      if (error.status === 403 && error.message.includes("Resource not accessible by integration")) {
+      if (error.status === 403 && error.message.includes('Resource not accessible by integration')) {
         permissionErrorCount++;
-        
+
         // Show warning only once, not for every repository
         if (!hasShownPermissionWarning) {
-          console.log("\n⚠️  GitHub App lacks webhook read permissions. Skipping webhook data collection...");
-          console.log("📋 To enable webhook features, update your GitHub App permissions:");
-          console.log("   • Repository Administration: Read");
-          console.log("   • Then update the app installation\n");
+          console.log('\n⚠️  GitHub App lacks webhook read permissions. Skipping webhook data collection...');
+          console.log('📋 To enable webhook features, update your GitHub App permissions:');
+          console.log('   • Repository Administration: Read');
+          console.log('   • Then update the app installation\n');
           hasShownPermissionWarning = true;
         }
-        
+
         logDebug(`Skipping webhooks for ${repo.name} due to insufficient permissions`);
       } else {
         logDebug(`Cannot access webhooks for repository ${repo.name}: ${error.message}`);
       }
-      
+
       // Add repository with empty webhooks if access fails
       enrichedData.push({
         repository: {
@@ -288,13 +286,13 @@ async function enrichRepositoriesWithWebhooks(octokit, org, repositories) {
       });
     }
   }
-  
+
   // Show summary of permission issues if any occurred
   if (permissionErrorCount > 0) {
     console.log(`\n📊 Summary: Skipped webhook data for ${permissionErrorCount}/${repositories.length} repositories due to permission restrictions.`);
-    console.log("🔧 Update your GitHub App's 'Administration' permission to 'Read' to access webhook configurations.\n");
+    console.log('🔧 Update your GitHub App\'s \'Administration\' permission to \'Read\' to access webhook configurations.\n');
   }
-  
+
   return enrichedData;
 }
 
@@ -305,7 +303,7 @@ async function enrichRepositoriesWithWebhooks(octokit, org, repositories) {
  */
 function generateWebhooksCSV(webhookData) {
   const csvRows = [];
-  
+
   // Add header
   csvRows.push([
     'Repository Name',
@@ -325,11 +323,11 @@ function generateWebhooksCSV(webhookData) {
     'Last Response Status',
     'Last Response Message'
   ]);
-  
+
   for (const item of webhookData) {
     const repo = item.repository;
     const webhooks = item.webhooks;
-    
+
     if (webhooks.length === 0) {
       // Repository with no webhooks
       csvRows.push([
@@ -374,7 +372,7 @@ function generateWebhooksCSV(webhookData) {
       }
     }
   }
-  
+
   // Convert to CSV string
   return csvRows.map(row => row.map(cell => `"${escapeCSVField(cell)}"`).join(',')).join('\n');
 }
@@ -387,36 +385,36 @@ function generateWebhooksCSV(webhookData) {
 function displayRepositoryWebhooks(item, detailed = false) {
   const repo = item.repository;
   const webhooks = item.webhooks;
-  
+
   console.log(`📦 ${repo.name} (${repo.full_name})`);
   console.log(`   🔗 ${repo.html_url}`);
   console.log(`   🔒 ${repo.private ? 'Private' : 'Public'}`);
-  
+
   if (webhooks.length === 0) {
-    console.log(`   📡 No webhooks configured`);
+    console.log('   📡 No webhooks configured');
   } else {
     console.log(`   📡 ${webhooks.length} webhook${webhooks.length !== 1 ? 's' : ''} configured:`);
-    
+
     webhooks.forEach((webhook, index) => {
       const status = webhook.active ? '🟢' : '🔴';
       console.log(`      ${index + 1}. ${status} ${webhook.name} (ID: ${webhook.id})`);
       console.log(`         URL: ${webhook.config?.url || 'Not configured'}`);
       console.log(`         Events: ${webhook.events.join(', ') || 'None'}`);
-      
+
       if (detailed) {
         console.log(`         Content Type: ${webhook.config?.content_type || 'Not specified'}`);
         console.log(`         Secret: ${webhook.config?.secret || 'Not configured'}`);
         console.log(`         Insecure SSL: ${webhook.config?.insecure_ssl || 'false'}`);
         console.log(`         Created: ${webhook.created_at || 'Unknown'}`);
         console.log(`         Updated: ${webhook.updated_at || 'Unknown'}`);
-        
+
         if (webhook.last_response?.status) {
           console.log(`         Last Response: ${webhook.last_response.status} - ${webhook.last_response.message || 'No message'}`);
         }
       }
     });
   }
-  
+
   console.log('');
 }
 
@@ -429,38 +427,38 @@ function displayRepositoryWebhooks(item, detailed = false) {
  */
 function sortWebhookData(webhookData, sortBy, order = 'asc') {
   const multiplier = order === 'desc' ? -1 : 1;
-  
+
   return webhookData.sort((a, b) => {
     let aValue, bValue;
-    
+
     switch (sortBy.toLowerCase()) {
-      case 'repo':
-      case 'repository':
-        aValue = a.repository.name.toLowerCase();
-        bValue = b.repository.name.toLowerCase();
-        break;
-      case 'webhooks':
-      case 'count':
-        aValue = a.webhook_count;
-        bValue = b.webhook_count;
-        break;
-      case 'url':
-        aValue = a.webhooks[0]?.config?.url?.toLowerCase() || '';
-        bValue = b.webhooks[0]?.config?.url?.toLowerCase() || '';
-        break;
-      case 'events':
-        aValue = a.webhooks[0]?.events?.length || 0;
-        bValue = b.webhooks[0]?.events?.length || 0;
-        break;
-      case 'created':
-        aValue = new Date(a.webhooks[0]?.created_at || 0);
-        bValue = new Date(b.webhooks[0]?.created_at || 0);
-        break;
-      default:
-        aValue = a.repository.name.toLowerCase();
-        bValue = b.repository.name.toLowerCase();
+    case 'repo':
+    case 'repository':
+      aValue = a.repository.name.toLowerCase();
+      bValue = b.repository.name.toLowerCase();
+      break;
+    case 'webhooks':
+    case 'count':
+      aValue = a.webhook_count;
+      bValue = b.webhook_count;
+      break;
+    case 'url':
+      aValue = a.webhooks[0]?.config?.url?.toLowerCase() || '';
+      bValue = b.webhooks[0]?.config?.url?.toLowerCase() || '';
+      break;
+    case 'events':
+      aValue = a.webhooks[0]?.events?.length || 0;
+      bValue = b.webhooks[0]?.events?.length || 0;
+      break;
+    case 'created':
+      aValue = new Date(a.webhooks[0]?.created_at || 0);
+      bValue = new Date(b.webhooks[0]?.created_at || 0);
+      break;
+    default:
+      aValue = a.repository.name.toLowerCase();
+      bValue = b.repository.name.toLowerCase();
     }
-    
+
     if (aValue < bValue) return -1 * multiplier;
     if (aValue > bValue) return 1 * multiplier;
     return 0;
@@ -486,7 +484,7 @@ function escapeCSVField(field) {
  */
 export function validateWebhookOptions(options) {
   const errors = [];
-  
+
   // Validate sort option
   if (options.sort) {
     const validSortOptions = ['repo', 'repository', 'webhooks', 'count', 'url', 'events', 'created'];
@@ -494,7 +492,7 @@ export function validateWebhookOptions(options) {
       errors.push(`Invalid sort option: ${options.sort}. Must be one of: ${validSortOptions.join(', ')}`);
     }
   }
-  
+
   // Validate order option
   if (options.order) {
     const validOrderOptions = ['asc', 'desc'];
@@ -502,7 +500,7 @@ export function validateWebhookOptions(options) {
       errors.push(`Invalid order option: ${options.order}. Must be one of: ${validOrderOptions.join(', ')}`);
     }
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors
@@ -531,20 +529,20 @@ export function getWebhookStats(webhookData) {
   webhookData.forEach(item => {
     const webhookCount = item.webhooks.length;
     totalWebhookCount += webhookCount;
-    
+
     if (webhookCount > 0) {
       stats.repositoriesWithWebhooks++;
     } else {
       stats.repositoriesWithoutWebhooks++;
     }
-    
+
     item.webhooks.forEach(webhook => {
       if (webhook.active) {
         stats.activeWebhooks++;
       } else {
         stats.inactiveWebhooks++;
       }
-      
+
       // Count events
       webhook.events.forEach(event => {
         stats.mostCommonEvents[event] = (stats.mostCommonEvents[event] || 0) + 1;
@@ -564,7 +562,7 @@ export function getWebhookStats(webhookData) {
  */
 export function displayWebhookStats(webhookData) {
   const stats = getWebhookStats(webhookData);
-  
+
   console.log('📊 Webhook Statistics:');
   console.log(`   Total repositories: ${stats.totalRepositories}`);
   console.log(`   Repositories with webhooks: ${stats.repositoriesWithWebhooks}`);
@@ -573,17 +571,17 @@ export function displayWebhookStats(webhookData) {
   console.log(`   Active webhooks: ${stats.activeWebhooks}`);
   console.log(`   Inactive webhooks: ${stats.inactiveWebhooks}`);
   console.log(`   Average webhooks per repository: ${stats.averageWebhooksPerRepo}`);
-  
+
   if (Object.keys(stats.mostCommonEvents).length > 0) {
     console.log('   Most common events:');
     const sortedEvents = Object.entries(stats.mostCommonEvents)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 5);
-    
+
     sortedEvents.forEach(([event, count]) => {
       console.log(`     ${event}: ${count}`);
     });
   }
-  
+
   console.log('');
 }

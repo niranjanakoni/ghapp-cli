@@ -3,7 +3,7 @@
  * Handles formatting and displaying data to the console
  */
 
-import { logCustom } from "./logger.js";
+import { logCustom } from './logger.js';
 
 /**
  * Gets repository visibility display string
@@ -24,14 +24,14 @@ export function getRepoVisibility(repo) {
  */
 export function getTeamVisibility(privacy) {
   switch (privacy) {
-    case 'secret':
-      return '| Secret';
-    case 'closed':
-      return '| Closed';
-    case 'open':
-      return '| Open';
-    default:
-      return '| Unknown';
+  case 'secret':
+    return '| Secret';
+  case 'closed':
+    return '| Closed';
+  case 'open':
+    return '| Open';
+  default:
+    return '| Unknown';
   }
 }
 
@@ -42,24 +42,24 @@ export function getTeamVisibility(privacy) {
  */
 export function getPermissionDisplay(permission) {
   if (!permission) return 'Unknown';
-  
+
   switch (permission.permission) {
-    case 'admin':
-      return '🔴 Admin';
-    case 'maintain':
-      return '🟠 Maintain';
-    case 'write':
-      return '🟡 Write';
-    case 'triage':
-      return '🔵 Triage';
-    case 'read':
-      return '🟢 Read';
-    case 'none':
-      return '⚪ None';
-    case 'unknown':
-      return '❓ Unknown';
-    default:
-      return permission.permission;
+  case 'admin':
+    return '🔴 Admin';
+  case 'maintain':
+    return '🟠 Maintain';
+  case 'write':
+    return '🟡 Write';
+  case 'triage':
+    return '🔵 Triage';
+  case 'read':
+    return '🟢 Read';
+  case 'none':
+    return '⚪ None';
+  case 'unknown':
+    return '❓ Unknown';
+  default:
+    return permission.permission;
   }
 }
 
@@ -72,32 +72,32 @@ export function displayRepository(repo, detailed = false) {
   const visibility = getRepoVisibility(repo);
   const language = repo.language ? ` (${repo.language})` : '';
   const permission = repo.user_permission ? ` | Permission: ${getPermissionDisplay(repo.user_permission)}` : '';
-  
+
   if (detailed) {
     console.log(`- ${repo.full_name} ${visibility}${language}${permission}`);
-    
+
     if (repo.description) {
       console.log(`  Description: ${repo.description}`);
     }
-    
+
     const stars = repo.stargazers_count || 0;
     const forks = repo.forks_count || 0;
     const size = repo.size || 0;
     console.log(`  Stars: ${stars} | Forks: ${forks} | Size: ${size} KB`);
-    
+
     if (repo.user_permission && repo.user_permission.role_name) {
       console.log(`  Role: ${repo.user_permission.role_name}`);
     }
-    
+
     if (repo.updated_at) {
       const updatedDate = new Date(repo.updated_at).toLocaleDateString();
       console.log(`  Updated: ${updatedDate}`);
     }
-    
+
     if (repo.html_url) {
       console.log(`  URL: ${repo.html_url}`);
     }
-    
+
     console.log('');
   } else {
     console.log(`- ${repo.full_name} ${visibility}${language}${permission}`);
@@ -111,7 +111,7 @@ export function displayRepository(repo, detailed = false) {
  */
 export function displayTeam(team, detailed = false) {
   const visibility = getTeamVisibility(team.privacy);
-  
+
   let members;
   if (team.members_count === undefined) {
     members = 'N/A';
@@ -120,7 +120,7 @@ export function displayTeam(team, detailed = false) {
   } else {
     members = team.members_count;
   }
-  
+
   let repos;
   if (team.repos_count === undefined) {
     repos = 'N/A';
@@ -129,20 +129,20 @@ export function displayTeam(team, detailed = false) {
   } else {
     repos = team.repos_count;
   }
-  
+
   if (detailed) {
     console.log(`- ${team.name} ${visibility} (${members} members)`);
-    
+
     if (team.description) {
       console.log(`  Description: ${team.description}`);
     }
-    
+
     console.log(`  Repositories: ${repos}`);
-    
+
     if (team.html_url) {
       console.log(`  URL: ${team.html_url}`);
     }
-    
+
     console.log('');
   } else {
     console.log(`- ${team.name} ${visibility} (${members} members)`);
@@ -157,22 +157,24 @@ export function displayTeam(team, detailed = false) {
  * @param {number} [totalCount] - Total count before filtering
  */
 export function displaySummary(type, count, source = '', totalCount = null) {
-  const emoji = type === 'repositories' ? '📦' : 
-                type === 'teams' ? '👥' : 
-                type === 'token' ? '🔐' : '📊';
-  
+  const emoji = type === 'repositories'
+    ? '📦'
+    : type === 'teams'
+      ? '👥'
+      : type === 'token' ? '🔐' : '📊';
+
   let message = `Found ${count} ${type}`;
-  
+
   if (source) {
     message += ` ${source}`;
   }
-  
+
   if (totalCount !== null && totalCount !== count) {
     message += ` (${totalCount} total)`;
   }
-  
+
   message += ':';
-  
+
   logCustom(emoji, message);
 }
 
@@ -206,12 +208,12 @@ export function displayTokenInfo(token, expiresAt) {
 export function displayHelp(command, helpData) {
   console.log(`📚 ${helpData.title}:`);
   console.log('');
-  
+
   if (helpData.description) {
     console.log(helpData.description);
     console.log('');
   }
-  
+
   if (helpData.options && helpData.options.length > 0) {
     console.log('Options:');
     helpData.options.forEach(option => {
@@ -219,7 +221,7 @@ export function displayHelp(command, helpData) {
     });
     console.log('');
   }
-  
+
   if (helpData.examples && helpData.examples.length > 0) {
     console.log('Examples:');
     helpData.examples.forEach(example => {
@@ -227,7 +229,7 @@ export function displayHelp(command, helpData) {
     });
     console.log('');
   }
-  
+
   if (helpData.notes && helpData.notes.length > 0) {
     console.log('Notes:');
     helpData.notes.forEach(note => {
@@ -256,7 +258,7 @@ export function displayProgress(message, current, total) {
 export function displayError(operation, error) {
   logCustom('❌', `Error ${operation}:`);
   console.error(`   ${error.message}`);
-  
+
   if (error.status) {
     console.error(`   HTTP Status: ${error.status}`);
   }

@@ -3,8 +3,8 @@
  * Handles environment variables and application configuration
  */
 
-import dotenv from "dotenv";
-import fs from "fs";
+import dotenv from 'dotenv';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -23,29 +23,29 @@ export const config = {
     installationId: parseInt(process.env.GITHUB_INSTALLATION_ID),
     privateKeyPath: process.env.GITHUB_PRIVATE_KEY_PATH,
     token: process.env.GITHUB_APP_TOKEN,
-    tokenExpires: process.env.GITHUB_APP_TOKEN_EXPIRES,
+    tokenExpires: process.env.GITHUB_APP_TOKEN_EXPIRES
   },
-  
+
   app: {
-    name: "ghapp",
-    version: "1.0.0",
-    description: "CLI to interact with GitHub App APIs",
+    name: 'ghapp',
+    version: '1.0.0',
+    description: 'CLI to interact with GitHub App APIs'
   },
-  
+
   api: {
     defaultPerPage: 30,
     maxPerPage: 100,
-    tokenRefreshBuffer: 300000, // 5 minutes in milliseconds
+    tokenRefreshBuffer: 300000 // 5 minutes in milliseconds
   },
-  
+
   files: {
-    envPath: ".env",
-    privateKeyPath: process.env.GITHUB_PRIVATE_KEY_PATH || "private-key.pem",
+    envPath: '.env',
+    privateKeyPath: process.env.GITHUB_PRIVATE_KEY_PATH || 'private-key.pem'
   },
-  
+
   csv: {
-    timestampFormat: "YYYY-MM-DDTHH-mm-ss-SSSZ",
-    defaultOutputDir: "./",
+    timestampFormat: 'YYYY-MM-DDTHH-mm-ss-SSSZ',
+    defaultOutputDir: './'
   }
 };
 
@@ -56,23 +56,23 @@ export const config = {
 export function validateConfig() {
   const required = [
     'GITHUB_APP_ID',
-    'GITHUB_INSTALLATION_ID', 
+    'GITHUB_INSTALLATION_ID',
     'GITHUB_PRIVATE_KEY_PATH'
   ];
-  
+
   const missing = required.filter(key => !process.env[key]);
-  
+
   if (missing.length > 0) {
     console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
     return false;
   }
-  
+
   // Check if private key file exists
   if (!fs.existsSync(config.github.privateKeyPath)) {
     console.error(`❌ Private key file not found: ${config.github.privateKeyPath}`);
     return false;
   }
-  
+
   return true;
 }
 
@@ -81,7 +81,7 @@ export function validateConfig() {
  * @returns {string} Private key content
  */
 export function getPrivateKey() {
-  return fs.readFileSync(config.github.privateKeyPath, "utf8");
+  return fs.readFileSync(config.github.privateKeyPath, 'utf8');
 }
 
 /**
@@ -91,25 +91,24 @@ export function getPrivateKey() {
  */
 export function updateEnvToken(newToken, expiresAt) {
   try {
-    const envContent = fs.readFileSync(config.files.envPath, "utf8");
-    const envLines = envContent.split("\n");
-    
+    const envContent = fs.readFileSync(config.files.envPath, 'utf8');
+    const envLines = envContent.split('\n');
+
     const updatedLines = envLines.map((line) => {
-      if (line.startsWith("GITHUB_APP_TOKEN=")) {
+      if (line.startsWith('GITHUB_APP_TOKEN=')) {
         return `GITHUB_APP_TOKEN=${newToken}`;
       }
-      if (line.startsWith("GITHUB_APP_TOKEN_EXPIRES=")) {
+      if (line.startsWith('GITHUB_APP_TOKEN_EXPIRES=')) {
         return `GITHUB_APP_TOKEN_EXPIRES=${expiresAt}`;
       }
       return line;
     });
-    
-    fs.writeFileSync(config.files.envPath, updatedLines.join("\n"));
-    
+
+    fs.writeFileSync(config.files.envPath, updatedLines.join('\n'));
+
     // Update in-memory config
     config.github.token = newToken;
     config.github.tokenExpires = expiresAt;
-    
   } catch (error) {
     console.error(`❌ Error updating .env file: ${error.message}`);
     throw error;
@@ -123,7 +122,7 @@ export function updateEnvToken(newToken, expiresAt) {
  */
 export function isTokenValid(expiresAt) {
   if (!expiresAt) return false;
-  
+
   try {
     const expiry = new Date(expiresAt);
     const now = new Date();

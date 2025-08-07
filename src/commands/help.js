@@ -3,8 +3,8 @@
  * Provides comprehensive help information for all commands
  */
 
-import { displayHelp } from "../utils/display.js";
-import { config } from "../config/config.js";
+import { displayHelp } from '../utils/display.js';
+import { config } from '../config/config.js';
 
 /**
  * Main help command handler
@@ -14,7 +14,7 @@ export function handleHelpCommand() {
   const helpData = {
     title: `${config.app.name} - ${config.app.description}`,
     description: `Version ${config.app.version}\n\nA command-line interface for interacting with GitHub App APIs.`,
-    
+
     options: [
       { flags: 'repos', description: 'List all repositories accessible to the installation' },
       { flags: 'teams [org]', description: 'List all teams (auto-detects org if not specified)' },
@@ -26,7 +26,7 @@ export function handleHelpCommand() {
       { flags: 'help-token', description: 'Show detailed help for token command' },
       { flags: '--version', description: 'Show version information' }
     ],
-    
+
     examples: [
       { command: 'ghapp repos', description: 'List all repositories' },
       { command: 'ghapp repos --visibility private', description: 'List only private repositories' },
@@ -36,14 +36,14 @@ export function handleHelpCommand() {
       { command: 'ghapp webhooks --repo myrepo', description: 'Check webhooks for specific repository' },
       { command: 'ghapp token', description: 'Show current token status' }
     ],
-    
+
     notes: [
       'Use --help with any command for detailed options',
       'All commands support --fetch to export data to CSV',
       'GitHub App credentials must be configured in .env file'
     ]
   };
-  
+
   displayHelp('help', helpData);
 }
 
@@ -55,7 +55,7 @@ export function handleReposHelpCommand() {
   const helpData = {
     title: 'Repository Commands Help',
     description: 'List and manage repositories accessible to your GitHub App installation.',
-    
+
     options: [
       { flags: '-v, --visibility <type>', description: 'Filter by visibility (public, private, internal)' },
       { flags: '-l, --language <lang>', description: 'Filter by programming language' },
@@ -70,7 +70,7 @@ export function handleReposHelpCommand() {
       { flags: '--order <order>', description: 'Sort order (asc, desc)' },
       { flags: '--stats', description: 'Show repository statistics' }
     ],
-    
+
     examples: [
       { command: 'ghapp repos', description: 'Get all repositories' },
       { command: 'ghapp repos --visibility private', description: 'Only private repositories' },
@@ -84,7 +84,7 @@ export function handleReposHelpCommand() {
       { command: 'ghapp repos --sort stars --order desc', description: 'Sort by stars (most first)' },
       { command: 'ghapp repos --since 2024-01-01', description: 'Updated since Jan 1, 2024' }
     ],
-    
+
     notes: [
       'CSV input format: repository names, one per line',
       'Output CSV includes: org name, repo name, empty status, dates, counts for issues/PRs/releases, etc.',
@@ -95,7 +95,7 @@ export function handleReposHelpCommand() {
       '--user-permission and --fetch may take longer as they require additional API calls per repository'
     ]
   };
-  
+
   displayHelp('repos', helpData);
 }
 
@@ -107,7 +107,7 @@ export function handleTeamsHelpCommand() {
   const helpData = {
     title: 'Teams Commands Help',
     description: 'List and manage teams in GitHub organizations.',
-    
+
     options: [
       { flags: '[org]', description: 'Organization name (auto-detects if not provided)' },
       { flags: '-v, --visibility <type>', description: 'Filter by visibility (open, closed, secret)' },
@@ -120,7 +120,7 @@ export function handleTeamsHelpCommand() {
       { flags: '--order <order>', description: 'Sort order (asc, desc)' },
       { flags: '--stats', description: 'Show team statistics' }
     ],
-    
+
     examples: [
       { command: 'ghapp teams', description: 'All teams (auto-detect org)' },
       { command: 'ghapp teams myorg', description: 'All teams in specific organization' },
@@ -131,7 +131,7 @@ export function handleTeamsHelpCommand() {
       { command: 'ghapp teams --min-members 5', description: 'Teams with 5+ members' },
       { command: 'ghapp teams --sort members --order desc', description: 'Sort by member count' }
     ],
-    
+
     notes: [
       'Organization is auto-detected from GitHub App installation if not specified',
       'Member and repository counts require additional API calls (slower)',
@@ -140,7 +140,7 @@ export function handleTeamsHelpCommand() {
       'Some teams may show "No access" for counts due to permissions'
     ]
   };
-  
+
   displayHelp('teams', helpData);
 }
 
@@ -152,18 +152,18 @@ export function handleTokenHelpCommand() {
   const helpData = {
     title: 'Token Commands Help',
     description: 'Manage and inspect GitHub App authentication tokens.',
-    
+
     options: [
       { flags: '--refresh', description: 'Force refresh the token' },
       { flags: '--validate', description: 'Validate token without showing details' }
     ],
-    
+
     examples: [
       { command: 'ghapp token', description: 'Show current token status and expiry' },
       { command: 'ghapp token --validate', description: 'Check if token is valid' },
       { command: 'ghapp token --refresh', description: 'Force refresh the token' }
     ],
-    
+
     notes: [
       'Tokens are automatically refreshed when expired',
       'Token expiry is shown in both UTC and IST time zones',
@@ -171,7 +171,7 @@ export function handleTokenHelpCommand() {
       'A 5-minute buffer is used for refresh timing'
     ]
   };
-  
+
   displayHelp('token', helpData);
 }
 
@@ -183,18 +183,18 @@ export function handleWebhooksHelpCommand() {
   const helpData = {
     title: 'Webhooks Command Help',
     description: 'List and analyze webhooks configured for repositories in your GitHub organization.',
-    
+
     usage: [
       'ghapp webhooks [org] [options]',
       'ghapp webhooks --repo <repository-name> [options]',
       'ghapp webhooks myorg --fetch',
       'ghapp webhooks --event push --active-only'
     ],
-    
+
     arguments: [
       { name: 'org', description: 'Organization name (auto-detects if not provided)' }
     ],
-    
+
     options: [
       { flags: '--repo <name>', description: 'Check webhooks for specific repository only' },
       { flags: '--fetch', description: 'Save webhook data to CSV file instead of displaying' },
@@ -209,7 +209,7 @@ export function handleWebhooksHelpCommand() {
       { flags: '-q, --quiet', description: 'Suppress non-error output' },
       { flags: '-h, --help', description: 'Show this help message' }
     ],
-    
+
     examples: [
       { command: 'ghapp webhooks', description: 'List webhooks for all repositories (auto-detect org)' },
       { command: 'ghapp webhooks myorg', description: 'List webhooks for all repositories in myorg' },
@@ -220,7 +220,7 @@ export function handleWebhooksHelpCommand() {
       { command: 'ghapp webhooks --sort webhooks --order desc', description: 'Sort by webhook count (highest first)' },
       { command: 'ghapp webhooks --stats', description: 'Show webhook statistics' }
     ],
-    
+
     notes: [
       'Organization is auto-detected if your GitHub App is installed at organization level',
       'CSV export includes webhook configuration details and last response status',
@@ -229,7 +229,7 @@ export function handleWebhooksHelpCommand() {
       'Requires appropriate GitHub App permissions to access repository webhooks'
     ]
   };
-  
+
   displayHelp('webhooks', helpData);
 }
 
@@ -264,12 +264,12 @@ export function showQuickHelp() {
  */
 export function getCommandHelp(command) {
   const helpMap = {
-    'repos': handleReposHelpCommand,
-    'teams': handleTeamsHelpCommand,
-    'webhooks': handleWebhooksHelpCommand,
-    'token': handleTokenHelpCommand,
-    'help': handleHelpCommand
+    repos: handleReposHelpCommand,
+    teams: handleTeamsHelpCommand,
+    webhooks: handleWebhooksHelpCommand,
+    token: handleTokenHelpCommand,
+    help: handleHelpCommand
   };
-  
+
   return helpMap[command] || null;
 }

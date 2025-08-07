@@ -3,9 +3,9 @@
  * Handles GitHub App token information and management
  */
 
-import { config } from "../config/config.js";
-import { displayTokenInfo, displayError } from "../utils/display.js";
-import { logError } from "../utils/logger.js";
+import { config } from '../config/config.js';
+import { displayTokenInfo, displayError } from '../utils/display.js';
+import { logError } from '../utils/logger.js';
 
 /**
  * Token command handler
@@ -29,9 +29,8 @@ export async function handleTokenCommand(options = {}) {
     }
 
     displayTokenInfo(token, expiresAt);
-
   } catch (error) {
-    displayError("handling token command", error);
+    displayError('handling token command', error);
   }
 }
 
@@ -43,7 +42,7 @@ export async function handleTokenCommand(options = {}) {
  */
 function validateTokenOnly(token, expiresAt) {
   if (!token || !expiresAt) {
-    logError("No token or expiry found in .env");
+    logError('No token or expiry found in .env');
     return false;
   }
 
@@ -63,7 +62,7 @@ function validateTokenOnly(token, expiresAt) {
 
     return isValid;
   } catch (error) {
-    logError("Error validating token", error);
+    logError('Error validating token', error);
     return false;
   }
 }
@@ -73,20 +72,19 @@ function validateTokenOnly(token, expiresAt) {
  */
 async function refreshTokenForce() {
   try {
-    const { getOctokitClient } = await import("../utils/github.js");
-    
+    const { getOctokitClient } = await import('../utils/github.js');
+
     // This will force a token refresh if needed
     await getOctokitClient();
-    
+
     console.log('✅ Token refresh completed');
-    
+
     // Display updated token info
     const updatedToken = config.github.token;
     const updatedExpiresAt = config.github.tokenExpires;
     displayTokenInfo(updatedToken, updatedExpiresAt);
-    
   } catch (error) {
-    displayError("refreshing token", error);
+    displayError('refreshing token', error);
   }
 }
 
@@ -96,7 +94,7 @@ async function refreshTokenForce() {
  */
 export function getTokenExpiryInfo() {
   const expiresAt = config.github.tokenExpires;
-  
+
   if (!expiresAt) {
     return { valid: false, error: 'No expiry date found' };
   }
@@ -105,11 +103,11 @@ export function getTokenExpiryInfo() {
     const expiryDate = new Date(expiresAt);
     const now = new Date();
     const timeLeft = expiryDate.getTime() - now.getTime();
-    
+
     return {
       valid: timeLeft > 300000, // 5 minutes buffer
       expiresAt: expiryDate,
-      timeLeft: timeLeft,
+      timeLeft,
       minutesLeft: Math.floor(timeLeft / 60000),
       hoursLeft: Math.floor(timeLeft / 3600000),
       isExpired: timeLeft <= 0,
@@ -136,18 +134,18 @@ export function needsTokenRefresh() {
 export function getTokenSummary() {
   const token = config.github.token;
   const info = getTokenExpiryInfo();
-  
+
   if (!token) {
     return '❌ No token available';
   }
-  
+
   if (!info.valid) {
     return '⚠️  Token invalid or expired';
   }
-  
+
   if (info.isExpiringSoon) {
     return `⏳ Token expires in ${info.minutesLeft} minutes`;
   }
-  
+
   return `✅ Token valid (${info.hoursLeft}h remaining)`;
 }

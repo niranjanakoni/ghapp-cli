@@ -3,9 +3,9 @@
  * Handles file operations including CSV generation and reading
  */
 
-import fs from "fs";
-import path from "path";
-import { logFile, logError, logSuccess } from "./logger.js";
+import fs from 'fs';
+import path from 'path';
+import { logFile, logError, logSuccess } from './logger.js';
 
 /**
  * Generates CSV content from repository collaborator data
@@ -15,29 +15,29 @@ import { logFile, logError, logSuccess } from "./logger.js";
 export function generateCollaboratorCSV(repos) {
   const headers = [
     'Source_Organization',
-    'Source_Repository', 
+    'Source_Repository',
     'Username',
     'Role'
   ];
-  
+
   const rows = [];
-  
+
   repos.forEach(repo => {
     if (repo.collaborators && repo.collaborators.length > 0) {
       repo.collaborators.forEach(collab => {
         const role = collab.originalRole || collab.role || '';
-        
+
         rows.push([
-          repo.owner?.login || '',           // Source Organization
-          repo.name || '',                   // Source Repository
-          collab.username || '',             // Username
-          role                               // Role (was Original_Permission)
+          repo.owner?.login || '', // Source Organization
+          repo.name || '', // Source Repository
+          collab.username || '', // Username
+          role // Role (was Original_Permission)
         ]);
       });
     }
     // Remove the "No collaborators found" rows - don't add anything if no collaborators
   });
-  
+
   return formatCSVContent(headers, rows);
 }
 
@@ -75,7 +75,7 @@ export function generateRepositoryCSV(repos) {
     'Full_URL',
     'Created'
   ];
-  
+
   const rows = repos.map(repo => {
     const row = [
       repo.owner?.login || '',
@@ -105,10 +105,10 @@ export function generateRepositoryCSV(repos) {
       repo.html_url || '',
       repo.created_at || ''
     ];
-    
+
     return row;
   });
-  
+
   return formatCSVContent(headers, rows);
 }
 
@@ -127,7 +127,7 @@ export function generateTeamCSV(teams) {
     'Repositories Count',
     'HTML URL'
   ];
-  
+
   const rows = teams.map(team => [
     team.name || '',
     team.slug || '',
@@ -137,7 +137,7 @@ export function generateTeamCSV(teams) {
     team.repos_count || 0,
     team.html_url || ''
   ]);
-  
+
   return formatCSVContent(headers, rows);
 }
 
@@ -151,7 +151,7 @@ function formatCSVContent(headers, rows) {
   const csvContent = [headers, ...rows]
     .map(row => row.map(cell => `"${cell}"`).join(','))
     .join('\n');
-  
+
   return csvContent;
 }
 
@@ -175,16 +175,15 @@ export function saveCSVFile(content, filename, outputDir = './') {
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const fullFilename = path.join(outputDir, `${filename}_${timestamp}.csv`);
-    
+
     // Ensure output directory exists
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
-    
+
     fs.writeFileSync(fullFilename, content, 'utf8');
     logFile(`Data saved to: ${fullFilename}`);
     return fullFilename;
-    
   } catch (error) {
     logError(`Error saving CSV file: ${error.message}`, error);
     return null;
@@ -202,35 +201,34 @@ export function readRepositoryCSV(filePath) {
       logError(`CSV file not found: ${filePath}`);
       return [];
     }
-    
+
     const content = fs.readFileSync(filePath, 'utf8');
     const lines = content.split('\n')
       .map(line => line.trim())
       .filter(line => line);
-    
+
     if (lines.length === 0) {
       logError('CSV file is empty');
       return [];
     }
-    
+
     // Check if first line is a header
     const firstLine = lines[0].toLowerCase();
-    const hasHeader = firstLine.includes('name') || 
-                     firstLine.includes('repository') || 
+    const hasHeader = firstLine.includes('name') ||
+                     firstLine.includes('repository') ||
                      firstLine.includes('repo');
-    
+
     const repoNames = hasHeader ? lines.slice(1) : lines;
-    
+
     // Clean up repository names (remove quotes, commas, etc.)
     const cleanNames = repoNames.map(name => {
       // Handle CSV format - take first column if comma-separated
       const cleanName = name.split(',')[0].replace(/['"]/g, '').trim();
       return cleanName;
     }).filter(name => name);
-    
+
     logSuccess(`Found ${cleanNames.length} repository names in CSV file`);
     return cleanNames;
-    
   } catch (error) {
     logError(`Error reading CSV file: ${error.message}`, error);
     return [];
@@ -261,14 +259,13 @@ export function createFileBackup(filePath) {
     if (!validateFilePath(filePath)) {
       return null;
     }
-    
+
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupPath = `${filePath}.backup.${timestamp}`;
-    
+
     fs.copyFileSync(filePath, backupPath);
     logSuccess(`Backup created: ${backupPath}`);
     return backupPath;
-    
   } catch (error) {
     logError(`Error creating backup: ${error.message}`, error);
     return null;

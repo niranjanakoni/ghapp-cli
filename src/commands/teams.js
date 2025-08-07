@@ -3,11 +3,11 @@
  * Handles listing and managing GitHub teams
  */
 
-import { getOctokitClient, fetchAllPages, getInstallationOrg, handleGitHubError } from "../utils/github.js";
-import { filterTeams, sortTeams } from "../utils/filters.js";
-import { displayTeam, displaySummary, displayProgress, displayError } from "../utils/display.js";
-import { generateTeamCSV, saveCSVFile } from "../utils/fileUtils.js";
-import { logFetch, logExport, logDetection, logDebug } from "../utils/logger.js";
+import { getOctokitClient, fetchAllPages, getInstallationOrg, handleGitHubError } from '../utils/github.js';
+import { filterTeams, sortTeams } from '../utils/filters.js';
+import { displayTeam, displaySummary, displayProgress, displayError } from '../utils/display.js';
+import { generateTeamCSV, saveCSVFile } from '../utils/fileUtils.js';
+import { logFetch, logExport, logDetection, logDebug } from '../utils/logger.js';
 
 /**
  * Teams command handler
@@ -29,36 +29,36 @@ export async function handleTeamsCommand(org, options = {}) {
 
     // Auto-detect organization if not provided
     if (!org) {
-      logDetection("No organization specified, detecting from GitHub App installation...");
+      logDetection('No organization specified, detecting from GitHub App installation...');
       org = await getInstallationOrg(octokit);
-      
+
       if (!org) {
-        displayError("organization detection", new Error("Could not auto-detect organization. Please specify: ghapp teams <org>"));
+        displayError('organization detection', new Error('Could not auto-detect organization. Please specify: ghapp teams <org>'));
         return;
       }
-      
+
       logDetection(`Detected organization: ${org}`);
     }
 
     logFetch(`Fetching all teams from ${org}...`);
-    
+
     const allTeams = await fetchAllPages(
       (params) => octokit.rest.teams.list(params),
       { org, perPage: 100 }
     );
 
     let enrichedTeams = allTeams;
-    
+
     // Enrich teams with comprehensive data if not skipping
     if (!options.skipMembers) {
-      logFetch("Enriching teams with comprehensive hierarchy and member data...");
+      logFetch('Enriching teams with comprehensive hierarchy and member data...');
       enrichedTeams = await enrichTeamsWithFullData(octokit, org, allTeams);
     }
 
     // Apply filters
     const originalCount = enrichedTeams.length;
     const filteredTeams = filterTeams(enrichedTeams, options);
-    
+
     // Apply sorting
     let finalTeams = filteredTeams;
     if (options.sort) {
@@ -69,22 +69,21 @@ export async function handleTeamsCommand(org, options = {}) {
     if (options.fetch) {
       const csvContent = await generateEnhancedTeamCSV(octokit, org, finalTeams);
       const filename = saveCSVFile(csvContent, `teams_${org}`);
-      
+
       if (filename) {
         logExport(`Exported ${finalTeams.length} teams from ${org} to ${filename}`);
       }
     } else {
       const totalCount = originalCount !== finalTeams.length ? originalCount : null;
       displaySummary('teams', finalTeams.length, `in ${org}`, totalCount);
-      
+
       finalTeams.forEach((team) => displayTeam(team, options.detailed));
     }
-
   } catch (error) {
     if (error.status === 404) {
-      displayError("fetching teams", new Error(`Organization '${org}' not found or not accessible`));
+      displayError('fetching teams', new Error(`Organization '${org}' not found or not accessible`));
     } else {
-      handleGitHubError(error, "fetching teams");
+      handleGitHubError(error, 'fetching teams');
     }
   }
 }
@@ -98,24 +97,24 @@ export async function handleTeamsCommand(org, options = {}) {
  */
 async function enrichTeamsWithFullData(octokit, org, teams) {
   const enrichedTeams = [];
-  
+
   // Build team hierarchy map
   const teamHierarchy = await buildTeamHierarchy(octokit, org, teams);
-  
+
   for (let i = 0; i < teams.length; i++) {
     const team = teams[i];
-    
-    displayProgress("Enriching team data", i + 1, teams.length);
-    
+
+    displayProgress('Enriching team data', i + 1, teams.length);
+
     // Get detailed member information
     const memberDetails = await getTeamMemberDetails(octokit, org, team.slug);
-    
+
     // Get repository permissions
     const repoPermissions = await getTeamRepoPermissions(octokit, org, team.slug);
-    
+
     // Get hierarchy information
     const hierarchyInfo = teamHierarchy[team.slug] || {};
-    
+
     enrichedTeams.push({
       ...team,
       members_count: memberDetails.length,
@@ -127,7 +126,7 @@ async function enrichTeamsWithFullData(octokit, org, teams) {
       direct_members_only: await getDirectMembersOnly(octokit, org, team.slug, hierarchyInfo.children || [], hierarchyInfo.parent)
     });
   }
-  
+
   return enrichedTeams;
 }
 
@@ -140,21 +139,21 @@ async function enrichTeamsWithFullData(octokit, org, teams) {
  */
 async function buildTeamHierarchy(octokit, org, teams) {
   const hierarchy = {};
-  
+
   for (const team of teams) {
     hierarchy[team.slug] = {
       parent: team.parent?.slug || null,
       children: []
     };
   }
-  
+
   // Build children arrays
   for (const team of teams) {
     if (team.parent?.slug && hierarchy[team.parent.slug]) {
       hierarchy[team.parent.slug].children.push(team.slug);
     }
   }
-  
+
   return hierarchy;
 }
 
@@ -172,9 +171,9 @@ async function getTeamMemberDetails(octokit, org, teamSlug) {
       (params) => octokit.rest.teams.listMembersInOrg(params),
       { org, team_slug: teamSlug, perPage: 100 }
     );
-    
+
     const memberDetails = [];
-    
+
     for (const member of members) {
       try {
         // Get membership details to determine role and if it's direct membership
@@ -183,7 +182,7 @@ async function getTeamMemberDetails(octokit, org, teamSlug) {
           team_slug: teamSlug,
           username: member.login
         });
-        
+
         memberDetails.push({
           username: member.login,
           role: membership.role, // 'member' or 'maintainer'
@@ -200,7 +199,7 @@ async function getTeamMemberDetails(octokit, org, teamSlug) {
         });
       }
     }
-    
+
     return memberDetails;
   } catch (error) {
     logDebug(`Cannot access members for team ${teamSlug}: ${error.message}`);
@@ -221,7 +220,7 @@ async function getTeamRepoPermissions(octokit, org, teamSlug) {
       (params) => octokit.rest.teams.listReposInOrg(params),
       { org, team_slug: teamSlug, perPage: 100 }
     );
-    
+
     return repos.map(repo => ({
       name: repo.name,
       full_name: repo.full_name,
@@ -253,12 +252,12 @@ async function getDirectMembersOnly(octokit, org, teamSlug, childTeamSlugs, pare
   try {
     // Get all members that GitHub reports for this team
     const allMembers = await getTeamMemberDetails(octokit, org, teamSlug);
-    
+
     // If this team has no parent and no children, all members are direct
     if (!parentTeamSlug && childTeamSlugs.length === 0) {
       return allMembers;
     }
-    
+
     // If this team has children but no parent, we need to exclude inherited members from children
     if (!parentTeamSlug && childTeamSlugs.length > 0) {
       // This is a parent team - exclude members who are actually in child teams
@@ -267,18 +266,18 @@ async function getDirectMembersOnly(octokit, org, teamSlug, childTeamSlugs, pare
         const childMemberDetails = await getTeamMemberDetails(octokit, org, childSlug);
         childMemberDetails.forEach(member => childMembers.add(member.username));
       }
-      
+
       const directMembers = allMembers.filter(member => !childMembers.has(member.username));
       logDebug(`Parent team ${teamSlug}: Total ${allMembers.length}, Direct ${directMembers.length}`);
       return directMembers;
     }
-    
+
     // If this team has a parent, all its members are direct (child teams don't inherit up)
     if (parentTeamSlug) {
       logDebug(`Child team ${teamSlug}: All ${allMembers.length} members are direct`);
       return allMembers;
     }
-    
+
     return allMembers;
   } catch (error) {
     logDebug(`Cannot determine direct members for team ${teamSlug}: ${error.message}`);
@@ -309,7 +308,7 @@ function getRepoRoleFromPermissions(permissions) {
  */
 async function generateEnhancedTeamCSV(octokit, org, teams) {
   const csvRows = [];
-  
+
   // Add header
   csvRows.push([
     'Team Name',
@@ -325,14 +324,14 @@ async function generateEnhancedTeamCSV(octokit, org, teams) {
     'Repository Full Name',
     'Repository Role'
   ]);
-  
+
   for (const team of teams) {
     const parentTeam = team.parent_team || '';
     const childTeams = (team.child_teams || []).join('; ');
     const directMembers = team.direct_members_only || [];
     const allMembers = team.member_details || [];
     const repos = team.repository_permissions || [];
-    
+
     // If team has no direct members and no repos, add one row with team info only
     if (directMembers.length === 0 && repos.length === 0) {
       csvRows.push([
@@ -351,14 +350,14 @@ async function generateEnhancedTeamCSV(octokit, org, teams) {
       ]);
       continue;
     }
-    
+
     // Create combinations of DIRECT members and repositories (not all members)
     const maxRows = Math.max(directMembers.length, repos.length, 1);
-    
+
     for (let i = 0; i < maxRows; i++) {
       const member = directMembers[i]; // Use direct members instead of all members
       const repo = repos[i];
-      
+
       csvRows.push([
         team.name || '',
         team.slug || '',
@@ -375,7 +374,7 @@ async function generateEnhancedTeamCSV(octokit, org, teams) {
       ]);
     }
   }
-  
+
   // Convert to CSV string
   return csvRows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
 }
@@ -417,7 +416,7 @@ async function getTeamMemberCount(octokit, org, teamSlug) {
       (params) => octokit.rest.teams.listMembersInOrg(params),
       { org, team_slug: teamSlug, perPage: 100 }
     );
-    
+
     return members.length;
   } catch (error) {
     logDebug(`Cannot access members for team ${teamSlug}: ${error.message}`);
@@ -438,7 +437,7 @@ async function getTeamRepoCount(octokit, org, teamSlug) {
       (params) => octokit.rest.teams.listReposInOrg(params),
       { org, team_slug: teamSlug, perPage: 100 }
     );
-    
+
     return repos.length;
   } catch (error) {
     logDebug(`Cannot access repositories for team ${teamSlug}: ${error.message}`);
@@ -505,7 +504,7 @@ export function getTeamStats(teams) {
  */
 export function displayTeamStats(teams) {
   const stats = getTeamStats(teams);
-  
+
   console.log('📊 Team Statistics:');
   console.log(`   Total: ${stats.total}`);
   console.log(`   Secret: ${stats.secret} | Closed: ${stats.closed} | Open: ${stats.open}`);
@@ -525,7 +524,7 @@ export function displayTeamStats(teams) {
  */
 export function validateTeamOptions(options) {
   const errors = [];
-  
+
   // Validate visibility option
   if (options.visibility) {
     const validVisibilities = ['open', 'closed', 'secret'];
@@ -533,7 +532,7 @@ export function validateTeamOptions(options) {
       errors.push(`Invalid visibility: ${options.visibility}. Must be one of: ${validVisibilities.join(', ')}`);
     }
   }
-  
+
   // Validate sort option
   if (options.sort) {
     const validSortOptions = ['name', 'members', 'repos'];
@@ -541,7 +540,7 @@ export function validateTeamOptions(options) {
       errors.push(`Invalid sort option: ${options.sort}. Must be one of: ${validSortOptions.join(', ')}`);
     }
   }
-  
+
   // Validate order option
   if (options.order) {
     const validOrderOptions = ['asc', 'desc'];
@@ -549,14 +548,14 @@ export function validateTeamOptions(options) {
       errors.push(`Invalid order option: ${options.order}. Must be one of: ${validOrderOptions.join(', ')}`);
     }
   }
-  
+
   // Validate member range
   if (typeof options.minMembers === 'number' && typeof options.maxMembers === 'number') {
     if (options.minMembers > options.maxMembers) {
       errors.push('minMembers cannot be greater than maxMembers');
     }
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors
