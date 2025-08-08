@@ -7,14 +7,20 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import fs from 'fs';
 import path from 'path';
+import { setLogLevel, LOG_LEVELS, getLogLevel } from '../src/utils/logger.js';
 
 // Force this suite to run serially by avoiding subtests scheduling after end
 // and ensuring all fs operations complete synchronously and cleanup is strict.
 
 describe('File Utilities Module', () => {
   let tempDir;
+  let prevLogLevel;
 
   beforeEach(() => {
+    // Reduce log noise and avoid async console writes during these tests
+    prevLogLevel = getLogLevel();
+    setLogLevel(-1);
+
     // Create temporary directory for test files
     tempDir = './test-temp';
     if (!fs.existsSync(tempDir)) {
@@ -23,6 +29,9 @@ describe('File Utilities Module', () => {
   });
 
   afterEach(() => {
+    // Restore previous log level
+    setLogLevel(prevLogLevel);
+
     // Clean up temporary files
     if (fs.existsSync(tempDir)) {
       const cleanupRecursively = (dir) => {
