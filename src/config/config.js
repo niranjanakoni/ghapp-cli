@@ -7,12 +7,43 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path'; // eslint-disable-line no-unused-vars
+import { execSync } from 'child_process';
+import { createRequire } from 'module';
 
 // Load environment variables
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename); // eslint-disable-line no-unused-vars
+
+// Resolve application version dynamically with sensible fallbacks
+function getAppVersion() {
+  const sanitize = (v) => (typeof v === 'string' ? v.replace(/^v/, '') : v);
+
+  // 1) Explicit environment override (recommended in CI)
+  if (process.env.GHAPP_VERSION) return sanitize(process.env.GHAPP_VERSION);
+
+  // 2) Try Git tag (works when running inside a git repo with tags fetched)
+  try {
+    const out = execSync('git describe --tags --abbrev=0', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+    if (out) return sanitize(out);
+  } catch {}
+
+  // 3) npm provided version when invoked via npm scripts
+  if (process.env.npm_package_version) return sanitize(process.env.npm_package_version);
+
+  // 4) package.json next to project root (works in dev)
+  try {
+    const require = createRequire(import.meta.url);
+    const pkg = require('../../package.json');
+    if (pkg?.version) return sanitize(pkg.version);
+  } catch {}
+
+  // 5) Fallback
+  return '0.0.0-dev';
+}
 
 /**
  * Configuration object containing all application settings
@@ -28,7 +59,7 @@ export const config = {
 
   app: {
     name: 'ghapp',
-    version: '1.0.0',
+    version: getAppVersion(),
     description: 'CLI to interact with GitHub App APIs'
   },
 
