@@ -173,11 +173,11 @@ function escapeCSVField(field) {
 export function createOutputDirectory(dataType, baseDir = './') {
   const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
   const outputDir = path.join(baseDir, 'ghapp-exports', timestamp, dataType);
-  
+
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
-  
+
   return outputDir;
 }
 
