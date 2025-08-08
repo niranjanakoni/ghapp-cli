@@ -114,34 +114,27 @@ GITHUB_APP_TOKEN_EXPIRES=2025-07-08T12:00:00Z
 
   describe('updateEnvToken', () => {
     it('should update token values in .env file', async () => {
-      const envContent = `GITHUB_APP_ID=123
-GITHUB_APP_TOKEN=old_token
-GITHUB_APP_TOKEN_EXPIRES=old_date
-GITHUB_INSTALLATION_ID=456`;
-      
       const testEnvFile = '.env.update.test';
-      fs.writeFileSync(testEnvFile, envContent);
-      
-      // Mock the config to use our test file
-      const { updateEnvToken } = await import('../src/config/config.js');
-      
-      // Temporarily change the env path
-      const originalFilesPath = '.env';
-      
+      fs.writeFileSync(testEnvFile, 'GITHUB_APP_ID=123\nGITHUB_INSTALLATION_ID=456');
+
+      // Dynamically import to get live config reference
+      const module = await import('../src/config/config.js');
+      const { updateEnvToken, config: appConfig } = module;
+
+      // Patch env path to point to our temp file
+      const originalEnvPath = appConfig.files.envPath;
+      appConfig.files.envPath = testEnvFile;
+
       try {
-        // Update the token
         updateEnvToken('new_token', 'new_date');
-        
-        // Read and verify the updated content
-        const updatedContent = fs.readFileSync('.env', 'utf8');
+
+        const updatedContent = fs.readFileSync(testEnvFile, 'utf8');
         assert(updatedContent.includes('GITHUB_APP_TOKEN=new_token'));
         assert(updatedContent.includes('GITHUB_APP_TOKEN_EXPIRES=new_date'));
-        
       } finally {
-        // Clean up
-        if (fs.existsSync(testEnvFile)) {
-          fs.unlinkSync(testEnvFile);
-        }
+        // Restore and cleanup
+        appConfig.files.envPath = originalEnvPath;
+        if (fs.existsSync(testEnvFile)) fs.unlinkSync(testEnvFile);
       }
     });
   });

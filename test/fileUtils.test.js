@@ -8,6 +8,9 @@ import assert from 'node:assert';
 import fs from 'fs';
 import path from 'path';
 
+// Force this suite to run serially by avoiding subtests scheduling after end
+// and ensuring all fs operations complete synchronously and cleanup is strict.
+
 describe('File Utilities Module', () => {
   let tempDir;
 
@@ -29,27 +32,17 @@ describe('File Utilities Module', () => {
           const stat = fs.lstatSync(filePath);
           if (stat.isDirectory()) {
             cleanupRecursively(filePath);
-            fs.rmdirSync(filePath);
+            try { fs.rmdirSync(filePath); } catch {}
           } else {
-            fs.unlinkSync(filePath);
+            try { fs.unlinkSync(filePath); } catch {}
           }
         });
       };
       try {
         cleanupRecursively(tempDir);
         fs.rmdirSync(tempDir);
-      } catch (error) {
-        // On Windows, sometimes files are locked, so try again after a small delay
-        setTimeout(() => {
-          try {
-            if (fs.existsSync(tempDir)) {
-              cleanupRecursively(tempDir);
-              fs.rmdirSync(tempDir);
-            }
-          } catch (e) {
-            // Ignore cleanup errors in tests
-          }
-        }, 100);
+      } catch {
+        // Ignore cleanup errors in CI to avoid async activity
       }
     }
   });

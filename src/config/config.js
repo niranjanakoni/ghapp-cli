@@ -92,18 +92,34 @@ export function getPrivateKey() {
  */
 export function updateEnvToken(newToken, expiresAt) {
   try {
-    const envContent = fs.readFileSync(config.files.envPath, 'utf8');
-    const envLines = envContent.split('\n');
+    // Read existing .env content if it exists, otherwise start with empty content
+    let envContent = '';
+    if (fs.existsSync(config.files.envPath)) {
+      envContent = fs.readFileSync(config.files.envPath, 'utf8');
+    }
+
+    const envLines = envContent
+      .split('\n')
+      .filter(line => line !== undefined); // preserve empty lines if any
+
+    let hasToken = false;
+    let hasExpires = false;
 
     const updatedLines = envLines.map((line) => {
       if (line.startsWith('GITHUB_APP_TOKEN=')) {
+        hasToken = true;
         return `GITHUB_APP_TOKEN=${newToken}`;
       }
       if (line.startsWith('GITHUB_APP_TOKEN_EXPIRES=')) {
+        hasExpires = true;
         return `GITHUB_APP_TOKEN_EXPIRES=${expiresAt}`;
       }
       return line;
     });
+
+    // Append token entries if they were not present
+    if (!hasToken) updatedLines.push(`GITHUB_APP_TOKEN=${newToken}`);
+    if (!hasExpires) updatedLines.push(`GITHUB_APP_TOKEN_EXPIRES=${expiresAt}`);
 
     fs.writeFileSync(config.files.envPath, updatedLines.join('\n'));
 
