@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@octokit/auth-app": "^4.0.0",
-    "@octokit/rest": "^20.0.0",
+    "@octokit/rest": "^22.0.0",
     "commander": "^11.0.0",
     "dotenv": "^16.0.0",
     "jsonwebtoken": "^9.0.2"
