@@ -18,12 +18,16 @@ import { displayError } from './src/utils/display.js';
 import { handleRepositoriesCommand, validateRepositoryOptions } from './src/commands/repos.js';
 import { handleTeamsCommand, validateTeamOptions } from './src/commands/teams.js';
 import { handleWebhooksCommand, validateWebhookOptions } from './src/commands/webhooks.js';
+import { handleSecretsCommand, validateSecretsOptions } from './src/commands/secrets.js';
+import { handleVariablesCommand, validateVariablesOptions } from './src/commands/variables.js';
 import { handleTokenCommand } from './src/commands/token.js';
 import {
   handleHelpCommand,
   handleReposHelpCommand,
   handleTeamsHelpCommand,
   handleWebhooksHelpCommand,
+  handleSecretsHelpCommand,
+  handleVariablesHelpCommand,
   handleTokenHelpCommand,
   showVersion,
   showQuickHelp
@@ -158,6 +162,62 @@ program
   });
 
 /**
+ * Secrets command
+ * Lists organization and repository secrets
+ */
+program
+  .command('secrets')
+  .argument('[org]', 'Organization name (auto-detects if not provided)')
+  .description('List organization and repository secrets')
+  .option('--scope <type>', 'Scope of secrets to fetch (org, repo, both)', 'both')
+  .option('--visibility <type>', 'Filter org secrets by visibility (all, private, selected)')
+  .option('--fetch', 'Save data to CSV file instead of displaying')
+  .option('--output <file>', 'Custom output file path for CSV export')
+  .action(async (org, options) => {
+    try {
+      // Validate options
+      const validation = validateSecretsOptions(options);
+      if (!validation.isValid) {
+        validation.errors.forEach(error => logError(error));
+        process.exit(1);
+      }
+
+      await handleSecretsCommand(org, options);
+    } catch (error) {
+      displayError('executing secrets command', error);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Variables command
+ * Lists organization and repository variables
+ */
+program
+  .command('variables')
+  .description('List and export GitHub Actions variables from organization and repository levels')
+  .option('--scope <type>', 'Scope of variables to fetch (org, repo, both)', 'both')
+  .option('--visibility <type>', 'Filter org variables by visibility (all, private, selected)')
+  .option('-f, --fetch', 'Export variables to CSV file instead of displaying')
+  .option('--output <file>', 'Custom output file path for CSV export')
+  .option('-v, --verbose', 'Enable verbose logging with detailed output')
+  .option('-q, --quiet', 'Suppress non-error output')
+  .action(async (options) => {
+    try {
+      const validation = validateVariablesOptions(options);
+      if (!validation.isValid) {
+        validation.errors.forEach(error => displayError('Option validation', new Error(error)));
+        process.exit(1);
+      }
+      
+      await handleVariablesCommand(options);
+    } catch (error) {
+      displayError('executing variables command', error);
+      process.exit(1);
+    }
+  });
+
+/**
  * Token command
  * Shows current GitHub App token information and management
  */
@@ -205,6 +265,20 @@ program
   .description('Show detailed help for webhooks command')
   .action(() => {
     handleWebhooksHelpCommand();
+  });
+
+program
+  .command('help-secrets')
+  .description('Show detailed help for secrets command')
+  .action(() => {
+    handleSecretsHelpCommand();
+  });
+
+program
+  .command('help-variables')
+  .description('Show detailed help for variables command')
+  .action(() => {
+    handleVariablesHelpCommand();
   });
 
 program

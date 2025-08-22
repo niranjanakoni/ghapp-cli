@@ -263,3 +263,19 @@ export function displayError(operation, error) {
     console.error(`   HTTP Status: ${error.status}`);
   }
 }
+
+/**
+ * Displays a success message
+ * @param {string} message - The success message to display
+ */
+export function displaySuccess(message) {
+  logCustom('✅', message);
+}
+
+/**
+ * Displays an informational message
+ * @param {string} message - The informational message to display
+ */
+export function displayInfo(message) {
+  logCustom('ℹ️', message);
+}
