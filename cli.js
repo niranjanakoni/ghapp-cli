@@ -209,7 +209,7 @@ program
         validation.errors.forEach(error => displayError('Option validation', new Error(error)));
         process.exit(1);
       }
-      
+
       await handleVariablesCommand(options);
     } catch (error) {
       displayError('executing variables command', error);

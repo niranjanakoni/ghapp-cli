@@ -353,10 +353,10 @@ export function generateSecretsCSV(secrets) {
 export async function generateVariablesCSV(variables, outputDir = null) {
   try {
     const csvContent = generateVariablesCSVContent(variables);
-    const filePath = outputDir 
+    const filePath = outputDir
       ? saveCSVFileOrganized(csvContent, null, 'variables', outputDir)
       : saveCSVFileOrganized(csvContent, 'variables', 'variables');
-    
+
     return filePath;
   } catch (error) {
     logError(`Error generating variables CSV: ${error.message}`, error);
@@ -404,13 +404,13 @@ function generateVariablesCSVContent(variables) {
 export async function generateVariablesCSVToFile(variables, outputPath) {
   try {
     const csvContent = generateVariablesCSVContent(variables);
-    
+
     // Ensure the directory exists
     const dir = path.dirname(outputPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    
+
     fs.writeFileSync(outputPath, csvContent, 'utf8');
     return outputPath;
   } catch (error) {
