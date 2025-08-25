@@ -19,10 +19,14 @@ export function handleHelpCommand() {
       { flags: 'repos', description: 'List all repositories accessible to the installation' },
       { flags: 'teams [org]', description: 'List all teams (auto-detects org if not specified)' },
       { flags: 'webhooks [org]', description: 'List webhooks configured for repositories' },
+      { flags: 'secrets [org]', description: 'List organization and repository secrets' },
+      { flags: 'variables [org]', description: 'List organization and repository variables' },
       { flags: 'token', description: 'Show token and expiry information' },
       { flags: 'help-repos', description: 'Show detailed help for repos command' },
       { flags: 'help-teams', description: 'Show detailed help for teams command' },
       { flags: 'help-webhooks', description: 'Show detailed help for webhooks command' },
+      { flags: 'help-secrets', description: 'Show detailed help for secrets command' },
+      { flags: 'help-variables', description: 'Show detailed help for variables command' },
       { flags: 'help-token', description: 'Show detailed help for token command' },
       { flags: '--version', description: 'Show version information' }
     ],
@@ -34,6 +38,10 @@ export function handleHelpCommand() {
       { command: 'ghapp teams myorg', description: 'List teams in specific organization' },
       { command: 'ghapp webhooks', description: 'List webhooks for all repositories' },
       { command: 'ghapp webhooks --repo myrepo', description: 'Check webhooks for specific repository' },
+      { command: 'ghapp secrets', description: 'List all organization and repository secrets' },
+      { command: 'ghapp secrets --fetch --export', description: 'Export organization secrets to CSV' },
+      { command: 'ghapp variables', description: 'Display all organization and repository variables' },
+      { command: 'ghapp variables --fetch', description: 'Export organization variables to CSV' },
       { command: 'ghapp token', description: 'Show current token status' }
     ],
 
@@ -143,38 +151,6 @@ export function handleTeamsHelpCommand() {
 
   displayHelp('teams', helpData);
 }
-
-/**
- * Token command help handler
- * Shows detailed help for the token command
- */
-export function handleTokenHelpCommand() {
-  const helpData = {
-    title: 'Token Commands Help',
-    description: 'Manage and inspect GitHub App authentication tokens.',
-
-    options: [
-      { flags: '--refresh', description: 'Force refresh the token' },
-      { flags: '--validate', description: 'Validate token without showing details' }
-    ],
-
-    examples: [
-      { command: 'ghapp token', description: 'Show current token status and expiry' },
-      { command: 'ghapp token --validate', description: 'Check if token is valid' },
-      { command: 'ghapp token --refresh', description: 'Force refresh the token' }
-    ],
-
-    notes: [
-      'Tokens are automatically refreshed when expired',
-      'Token expiry is shown in both UTC and IST time zones',
-      'Tokens are valid for 1 hour from GitHub App',
-      'A 5-minute buffer is used for refresh timing'
-    ]
-  };
-
-  displayHelp('token', helpData);
-}
-
 /**
  * Webhooks command help handler
  * Shows detailed help for the webhooks command
@@ -234,6 +210,134 @@ export function handleWebhooksHelpCommand() {
 }
 
 /**
+ * Secrets command help handler
+ * Shows detailed help for the secrets command
+ */
+export function handleSecretsHelpCommand() {
+  const helpData = {
+    title: 'Secrets Commands Help',
+    description: 'List and manage GitHub organization and repository secrets.',
+
+    arguments: [
+      { name: 'org', description: 'Organization name (auto-detects if not provided)' }
+    ],
+
+    options: [
+      { flags: '--scope <type>', description: 'Scope of secrets to fetch: org, repo, both (default: both)' },
+      { flags: '--visibility <type>', description: 'Filter org secrets by visibility: all, private, selected' },
+      { flags: '--fetch', description: 'Export secrets metadata to CSV file instead of displaying' },
+      { flags: '--output <file>', description: 'Custom output file path for CSV export' },
+      { flags: '-v, --verbose', description: 'Enable verbose logging' },
+      { flags: '-q, --quiet', description: 'Suppress non-error output' },
+      { flags: '-h, --help', description: 'Show this help message' }
+    ],
+
+    examples: [
+      { command: 'ghapp secrets', description: 'List all organization and repository secrets' },
+      { command: 'ghapp secrets myorg', description: 'List secrets for specific organization' },
+      { command: 'ghapp secrets --scope org', description: 'List only organization secrets' },
+      { command: 'ghapp secrets --scope repo', description: 'List only repository secrets' },
+      { command: 'ghapp secrets --visibility private', description: 'Show only private organization secrets' },
+      { command: 'ghapp secrets --fetch', description: 'Export all secrets metadata to CSV' },
+      { command: 'ghapp secrets --scope org --fetch', description: 'Export only organization secrets to CSV' },
+      { command: 'ghapp secrets --output ./my-secrets.csv --fetch', description: 'Export to custom file path' }
+    ],
+
+    notes: [
+      'Organization is auto-detected if your GitHub App is installed at organization level',
+      'Secret values are never exposed - only metadata with placeholder values',
+      'CSV export includes scope, repository, name, visibility, and timestamps',
+      'For organization secrets with "selected" visibility, repository names are included',
+      'Requires appropriate GitHub App permissions to access secrets',
+      'Repository secrets are fetched from all accessible repositories',
+      'Large organizations may take time due to rate limiting and pagination'
+    ]
+  };
+
+  displayHelp('secrets', helpData);
+}
+
+/**
+ * Variables command help handler
+ * Shows detailed help for the variables command
+ */
+export function handleVariablesHelpCommand() {
+  const helpData = {
+    title: 'Variables Commands Help',
+    description: 'List and manage GitHub Actions variables from organization and repository levels.',
+
+    options: [
+      { flags: '--scope <type>', description: 'Scope of variables to fetch: org, repo, both (default: both)' },
+      { flags: '--visibility <type>', description: 'Filter org variables by visibility: all, private, selected' },
+      { flags: '--fetch, -f', description: 'Export variables to CSV file instead of displaying' },
+      { flags: '--output <file>', description: 'Custom output file path for CSV export' },
+      { flags: '--verbose, -v', description: 'Enable verbose logging with detailed output' },
+      { flags: '--quiet, -q', description: 'Suppress non-error output' },
+      { flags: '--help, -h', description: 'Show this help information' }
+    ],
+
+    examples: [
+      { command: 'ghapp variables', description: 'Display all organization and repository variables' },
+      { command: 'ghapp variables --scope org', description: 'Display only organization variables' },
+      { command: 'ghapp variables --scope repo', description: 'Display only repository variables' },
+      { command: 'ghapp variables --visibility private', description: 'Display only private organization variables' },
+      { command: 'ghapp variables --fetch', description: 'Export all variables to CSV file' },
+      { command: 'ghapp variables --fetch --output ./my-vars.csv', description: 'Export to custom file path' },
+      { command: 'ghapp variables --scope org --fetch', description: 'Export only organization variables to CSV' },
+      { command: 'ghapp variables --verbose', description: 'Display variables with detailed logging' },
+      { command: 'ghapp variables --fetch --quiet', description: 'Export to CSV with minimal output' }
+    ],
+
+    notes: [
+      'Organization is auto-detected from your GitHub App configuration',
+      'Variable values are retrieved when available through the API',
+      'CSV export includes scope, repository, name, value, visibility, and timestamps',
+      'Organization variables can have visibility: all, private, or selected',
+      'Repository variables are always repository-scoped',
+      'Large organizations may take time due to API rate limiting',
+      'Results are automatically paginated for complete data retrieval',
+      'Requires GitHub App with "Variables" read permissions'
+    ]
+  };
+
+  displayHelp('variables', helpData);
+}
+
+/**
+ * Token command help handler
+ * Shows detailed help for the token command
+ */
+export function handleTokenHelpCommand() {
+  const helpData = {
+    title: 'Token Commands Help',
+    description: 'Show current GitHub App token information and management.',
+
+    options: [
+      { flags: '--refresh', description: 'Force refresh the token' },
+      { flags: '--validate', description: 'Validate token without showing details' },
+      { flags: '-v, --verbose', description: 'Enable verbose logging' },
+      { flags: '-q, --quiet', description: 'Suppress non-error output' },
+      { flags: '-h, --help', description: 'Show this help message' }
+    ],
+
+    examples: [
+      { command: 'ghapp token', description: 'Show current token status and expiry' },
+      { command: 'ghapp token --refresh', description: 'Force refresh the token' },
+      { command: 'ghapp token --validate', description: 'Just validate token without showing details' }
+    ],
+
+    notes: [
+      'Token is automatically refreshed when needed',
+      'Tokens expire every hour and are managed automatically',
+      'Use --refresh to force a new token if experiencing issues',
+      'Token details are never displayed for security reasons'
+    ]
+  };
+
+  displayHelp('token', helpData);
+}
+
+/**
  * Shows version information
  */
 export function showVersion() {
@@ -251,6 +355,7 @@ export function showQuickHelp() {
   console.log('  repos                   List repositories');
   console.log('  teams [org]             List teams');
   console.log('  webhooks [org]          List webhooks');
+  console.log('  secrets [org]           List secrets');
   console.log('  token                   Show token info');
   console.log('  help                    Show this help');
   console.log('');
@@ -267,6 +372,8 @@ export function getCommandHelp(command) {
     repos: handleReposHelpCommand,
     teams: handleTeamsHelpCommand,
     webhooks: handleWebhooksHelpCommand,
+    secrets: handleSecretsHelpCommand,
+    variables: handleVariablesHelpCommand,
     token: handleTokenHelpCommand,
     help: handleHelpCommand
   };

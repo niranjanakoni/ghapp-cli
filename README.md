@@ -6,9 +6,11 @@ A modular, feature-rich command-line interface for interacting with GitHub App A
 
 - **Modular Architecture**: Clean separation of concerns with dedicated modules for each command
 - **Repository Management**: List, filter, sort, and export repository data with advanced filtering
-- **Collaborator Management**: Fetch repository collaborators with their permission levels (NEW!)
+- **Collaborator Management**: Fetch repository collaborators with their permission levels
 - **Team Management**: Manage organization teams with hierarchy, member roles, and repository permissions
 - **Webhook Management**: Discover, analyze, and export repository webhook configurations
+- **Secrets Management**: Fetch and export GitHub Actions secrets metadata from organization and repositories
+- **Variables Management**: Fetch and export GitHub Actions variables from organization and repositories
 - **Token Management**: Handle GitHub App authentication with automatic token refresh
 - **CSV Export/Import**: Export data to CSV files with organized folder structure and import repository lists from CSV
 - **Comprehensive Filtering**: Advanced filtering options for repositories, teams, and webhooks
@@ -64,7 +66,7 @@ ghapp help
 # List all repositories
 ghapp repos
 
-# 🆕 Export repository collaborators to CSV (NEW!)
+# Export repository collaborators to CSV
 ghapp repos --user-permission --fetch
 
 # List teams (auto-detect organization)
@@ -72,6 +74,18 @@ ghapp teams
 
 # List webhooks (auto-detect organization)
 ghapp webhooks
+
+# Display GitHub Actions secrets metadata
+ghapp secrets
+
+# Export secrets metadata to CSV
+ghapp secrets --fetch
+
+# Display GitHub Actions variables
+ghapp variables
+
+# Export variables to CSV
+ghapp variables --fetch
 
 # Show token information
 ghapp token
@@ -166,6 +180,66 @@ ghapp webhooks --sort webhooks --order desc --stats
 
 **Note**: By default, the webhooks command only displays repositories that have webhooks configured. This provides a cleaner, more focused view of your webhook infrastructure. Use `--show-all` to display all repositories including those without webhooks.
 
+### Secrets Commands
+
+```bash
+# Display organization and repository secrets metadata
+ghapp secrets
+
+# Export secrets metadata to CSV file
+ghapp secrets --fetch
+
+# Display only organization secrets
+ghapp secrets --scope org
+
+# Display only repository secrets
+ghapp secrets --scope repo
+
+# Filter organization secrets by visibility
+ghapp secrets --visibility private
+
+# Export with custom output file
+ghapp secrets --fetch --output ./my-secrets.csv
+
+# Display with verbose output
+ghapp secrets --verbose
+```
+
+**Note**: Secrets command fetches GitHub Actions secrets metadata from both organization and repository levels. Secret values are never exposed - only metadata with placeholder values for security. The CSV export includes scope, repository, name, visibility, and timestamps.
+
+### Variables Commands
+
+```bash
+# Display organization and repository variables
+ghapp variables
+
+# Export variables to CSV file
+ghapp variables --fetch
+
+# Display only organization variables
+ghapp variables --scope org
+
+# Display only repository variables
+ghapp variables --scope repo
+
+# Filter organization variables by visibility
+ghapp variables --visibility private
+
+# Export with custom output file
+ghapp variables --fetch --output ./my-variables.csv
+
+# Display with verbose output
+ghapp variables --verbose
+
+# Export with quiet mode (minimal output)
+ghapp variables --fetch --quiet
+
+# Export with verbose logging
+ghapp variables --fetch --verbose
+```
+
+**Note**: Variables command fetches GitHub Actions variables from both organization and repository levels, displaying their actual values (unlike secrets which are encrypted). The CSV export includes visibility settings, selected repositories for organization variables, and timestamps.
+
 ### Token Commands
 
 ```bash
@@ -189,6 +263,8 @@ ghapp help
 ghapp help-repos
 ghapp help-teams
 ghapp help-webhooks
+ghapp help-secrets
+ghapp help-variables
 ghapp help-token
 ```
 
@@ -203,7 +279,7 @@ ghapp help-token
 | `--repo-csv <file>` | Get specific repositories from CSV file | `--repo-csv repos.csv` |
 | `--detailed` | Show detailed information including description | `--detailed` |
 | `--fetch` | Save comprehensive data to CSV file with detailed metrics | `--fetch` |
-| `--user-permission` | **NEW!** Fetch collaborators and their roles for each repository | `--user-permission --fetch` |
+| `--user-permission` | Fetch collaborators and their roles for each repository | `--user-permission --fetch` |
 | `--since <date>` | Filter by last update date (ISO 8601) | `--since 2024-01-01` |
 | `--min-stars <num>` | Minimum number of stars | `--min-stars 10` |
 | `--max-stars <num>` | Maximum number of stars | `--max-stars 1000` |
@@ -239,6 +315,28 @@ ghapp help-token
 | `--order <order>` | Sort order (asc, desc) | `--order desc` |
 | `--stats` | Show webhook statistics | `--stats` |
 
+### Secrets Options
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `--scope <type>` | Scope of secrets to fetch (org, repo, both) | `--scope org` |
+| `--visibility <type>` | Filter org secrets by visibility (all, private, selected) | `--visibility private` |
+| `--fetch` | Export secrets metadata to CSV file instead of displaying | `--fetch` |
+| `--output <file>` | Custom output file path for CSV export | `--output ./my-secrets.csv` |
+| `--verbose` | Enable verbose logging for detailed output | `--verbose` |
+| `--quiet` | Suppress non-error output | `--quiet` |
+
+### Variables Options
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `--scope <type>` | Scope of variables to fetch (org, repo, both) | `--scope org` |
+| `--visibility <type>` | Filter org variables by visibility (all, private, selected) | `--visibility private` |
+| `--fetch` | Export variables to CSV file instead of displaying | `--fetch` |
+| `--output <file>` | Custom output file path for CSV export | `--output ./my-variables.csv` |
+| `--verbose` | Enable verbose logging for detailed output | `--verbose` |
+| `--quiet` | Suppress non-error output | `--quiet` |
+
 ### Token Options
 
 | Option | Description | Example |
@@ -264,7 +362,7 @@ org/repo-name-2
 another-repo
 ```
 
-### Repository Collaborators CSV Output (NEW!)
+### Repository Collaborators CSV Output
 When using `--user-permission --fetch`, generates a clean CSV with only repositories that have direct collaborators:
 
 ```csv
@@ -333,6 +431,73 @@ Name,Slug,Privacy,Description,Members Count,Repositories Count,HTML URL
 Development Team,dev-team,closed,Main development team,8,12,https://github.com/orgs/myorg/teams/dev-team
 ```
 
+### Webhook CSV Output
+```csv
+Org_Name,Repo_Name,Webhook_ID,Name,Active,URL,Content_Type,Secret,SSL_Verification,Events,Created,Updated,Last_Response_Code,Last_Response_Message
+Demo-workshop-org,action-example,12345678,web,true,https://webhook.example.com/payload,application/json,true,true,"push,pull_request",2024-06-15T09:20:00Z,2025-01-05T11:00:00Z,200,OK
+```
+
+#### Webhook CSV Column Descriptions
+
+| Column | Description |
+|--------|-------------|
+| `Org_Name` | Organization that owns the repository |
+| `Repo_Name` | Repository name containing the webhook |
+| `Webhook_ID` | Unique webhook identifier |
+| `Name` | Webhook name (usually 'web') |
+| `Active` | Whether the webhook is active (true/false) |
+| `URL` | Target URL for webhook delivery |
+| `Content_Type` | Content type for webhook payload |
+| `Secret` | Whether webhook has a secret configured (true/false) |
+| `SSL_Verification` | Whether SSL verification is enabled (true/false) |
+| `Events` | Comma-separated list of events that trigger the webhook |
+| `Created` | Timestamp when webhook was created |
+| `Updated` | Timestamp when webhook was last updated |
+| `Last_Response_Code` | HTTP status code from last delivery attempt |
+| `Last_Response_Message` | Response message from last delivery attempt |
+
+### Secrets CSV Output
+```csv
+scope,repository,name,value,visibility,selected_repositories,created_at,updated_at
+organization,,API_TOKEN,[ENCRYPTED_SECRET_VALUE],all,,2024-06-15T09:20:00Z,2025-01-05T11:00:00Z
+organization,,DB_PASSWORD,[ENCRYPTED_SECRET_VALUE],selected,"repo1,repo2",2024-06-15T09:20:00Z,2025-01-05T11:00:00Z
+repository,my-repo,SECRET_KEY,[ENCRYPTED_SECRET_VALUE],,,2024-06-15T09:20:00Z,2025-01-05T11:00:00Z
+```
+
+#### Secrets CSV Column Descriptions
+
+| Column | Description |
+|--------|-------------|
+| `scope` | Secret scope (organization or repository) |
+| `repository` | Repository name (empty for organization secrets) |
+| `name` | Secret name |
+| `value` | Always `[ENCRYPTED_SECRET_VALUE]` for security |
+| `visibility` | Organization secret visibility (all, private, selected) |
+| `selected_repositories` | Comma-separated repository list for "selected" visibility |
+| `created_at` | Timestamp when secret was created |
+| `updated_at` | Timestamp when secret was last updated |
+
+### Variables CSV Output
+```csv
+scope,repository,name,value,visibility,selected_repositories,created_at,updated_at
+organization,,API_URL,https://api.example.com,all,,2024-06-15T09:20:00Z,2025-01-05T11:00:00Z
+organization,,ENVIRONMENT,production,selected,"repo1,repo2",2024-06-15T09:20:00Z,2025-01-05T11:00:00Z
+repository,my-repo,BUILD_CONFIG,release,,,2024-06-15T09:20:00Z,2025-01-05T11:00:00Z
+```
+
+#### Variables CSV Column Descriptions
+
+| Column | Description |
+|--------|-------------|
+| `scope` | Variable scope (organization or repository) |
+| `repository` | Repository name (empty for organization variables) |
+| `name` | Variable name |
+| `value` | Actual variable value (unlike secrets) |
+| `visibility` | Organization variable visibility (all, private, selected) |
+| `selected_repositories` | Comma-separated repository list for "selected" visibility |
+| `created_at` | Timestamp when variable was created |
+| `updated_at` | Timestamp when variable was last updated |
+
 ## Project Structure
 
 ```
@@ -342,6 +507,8 @@ ghapp-cli/
 │   │   ├── repos.js       # Repository command handler
 │   │   ├── teams.js       # Teams command handler
 │   │   ├── webhooks.js    # Webhooks command handler
+│   │   ├── secrets.js     # Secrets command handler
+│   │   ├── variables.js   # Variables command handler
 │   │   ├── token.js       # Token command handler
 │   │   └── help.js        # Help command handler
 │   ├── config/            # Configuration management
@@ -365,61 +532,11 @@ ghapp-cli/
 └── README.md              # This file
 ```
 
-## Recent Updates
-
-### 🆕 Version 2.0 - Collaborator Management
-- **NEW**: `--user-permission` flag for repository collaborator analysis
-- **NEW**: Clean CSV export for repository collaborators with direct permissions only
-- **IMPROVED**: Enhanced filtering to exclude inherited organization permissions
-- **ENHANCED**: Better data quality for migration planning and access auditing
-
-## 🆕 Collaborator Management (New Feature!)
-
-The CLI now includes powerful collaborator management capabilities perfect for repository access analysis and migration planning.
-
-### Key Features
-
-- **Direct Collaborators Only**: Fetches users explicitly added to repositories, excluding inherited organization permissions
-- **Clean CSV Export**: Generates clean data with only repositories that have direct collaborators
-- **Accurate Permissions**: Shows actual GitHub API permission levels (`admin`, `write`, `read`, `maintain`, `triage`)
-- **Migration Ready**: Perfect format for analyzing repository access patterns and planning migrations
-
-### Usage Examples
-
-```bash
-# Export all repository collaborators to CSV
-ghapp repos --user-permission --fetch
-
-# View collaborators in terminal (with repository metrics)
-ghapp repos --user-permission
-
-# Combine with repository filtering
-ghapp repos --visibility private --user-permission --fetch
-```
-
-### Sample Output
-
-```csv
-Source_Organization,Source_Repository,Username,Role
-Demo-workshop-org,action-example,vaishnavn02,admin
-Demo-workshop-org,action-example,akshay-canarys,write
-Demo-workshop-org,HelloWebApp,niranjanakoni,admin
-Demo-workshop-org,codeowners-test,ramesh2051,write
-Demo-workshop-org,codeowners-test,nikhilgowda-135,write
-```
-
-### What Makes This Special
-
-1. **Precise Filtering**: Uses GitHub's `affiliation: 'direct'` parameter to exclude organization owners who aren't actual collaborators
-2. **No Noise**: Only includes repositories with actual collaborators (no "No collaborators found" entries)
-3. **Ready for Analysis**: Clean, focused data perfect for understanding repository access patterns
-4. **Migration Planning**: Ideal for planning repository migrations with accurate user permission mapping
-
 ## CSV Export Features
 
-All commands support CSV export with `--fetch` option. **NEW**: All exports are automatically organized into date-based folders by data type for better file management.
+All commands support CSV export with `--fetch` option. All exports are automatically organized into date-based folders by data type for better file management.
 
-### Repository Collaborators CSV Export (NEW!)
+### Repository Collaborators CSV Export
 - Clean collaborator data with direct repository access only
 - Organization, repository, username, and permission level
 - Excludes inherited organization permissions for accurate analysis
@@ -451,6 +568,21 @@ All commands support CSV export with `--fetch` option. **NEW**: All exports are 
 - Event types and creation/update timestamps
 - Last response status and messages
 
+### Secrets CSV Export
+- Organization and repository secrets metadata (values never exposed)
+- Secret scope (organization/repository), name, and placeholder values
+- Visibility settings (all, private, selected) for organization secrets
+- Selected repositories for organization secrets with "selected" visibility
+- Creation and update timestamps
+- Security-safe export with `[ENCRYPTED_SECRET_VALUE]` placeholders
+
+### Variables CSV Export
+- Organization and repository variables with actual values
+- Variable scope (organization/repository), name, and value
+- Visibility settings (all, private, selected)
+- Selected repositories for organization variables with "selected" visibility
+- Creation and update timestamps
+
 ### Organized Export Structure
 
 All CSV exports are automatically organized into a clean directory structure:
@@ -461,7 +593,9 @@ ghapp-exports/
     ├── repositories/        # Repository data exports
     ├── collaborators/       # Collaborator data exports  
     ├── teams/              # Team data exports
-    └── webhooks/           # Webhook data exports
+    ├── webhooks/           # Webhook data exports
+    ├── secrets/            # Secrets metadata exports
+    └── variables/          # Variables data exports
 ```
 
 **Benefits:**
@@ -477,6 +611,8 @@ ghapp-exports/2025-08-07/repositories/repos_2025-08-07T10-30-15-123Z.csv
 ghapp-exports/2025-08-07/collaborators/collabs_2025-08-07T10-31-22-456Z.csv
 ghapp-exports/2025-08-07/teams/teams_2025-08-07T10-32-18-789Z.csv
 ghapp-exports/2025-08-07/webhooks/webhooks_2025-08-07T10-33-05-012Z.csv
+ghapp-exports/2025-08-07/secrets/secrets_2025-08-07T10-33-45-678Z.csv
+ghapp-exports/2025-08-07/variables/variables_2025-08-07T10-34-12-345Z.csv
 ```
 
 ## Global Options
@@ -632,7 +768,7 @@ MIT License - see LICENSE file for details.
 ```bash
 # Repository analysis and metrics
 ghapp repos --fetch                           # Export all repository metrics
-ghapp repos --user-permission --fetch         # Export repository collaborators (NEW!)
+ghapp repos --user-permission --fetch         # Export repository collaborators
 ghapp repos --visibility private --fetch      # Export private repositories only
 
 # Organization team analysis  
@@ -640,6 +776,14 @@ ghapp teams --fetch                           # Export team structure and member
 
 # Webhook analysis
 ghapp webhooks --fetch                        # Export webhook configurations
+
+# Secrets analysis
+ghapp secrets                                 # Display GitHub Actions secrets metadata
+ghapp secrets --fetch                         # Export secrets metadata to CSV
+
+# Variables analysis
+ghapp variables                               # Display GitHub Actions variables
+ghapp variables --fetch                       # Export variables to CSV
 
 # Token management
 ghapp token                                   # Check token status
@@ -654,6 +798,8 @@ ghapp token --refresh                         # Force token refresh
 | `ghapp repos --user-permission --fetch` | `collaborators_TIMESTAMP.csv` | 4 columns of collaborator data |
 | `ghapp teams --fetch` | `teams_TIMESTAMP.csv` | Team structure and member counts |
 | `ghapp webhooks --fetch` | `webhooks_TIMESTAMP.csv` | Webhook configurations |
+| `ghapp secrets --fetch` | `secrets_TIMESTAMP.csv` | 8 columns of GitHub Actions secrets metadata |
+| `ghapp variables --fetch` | `variables_TIMESTAMP.csv` | 8 columns of GitHub Actions variables |
 
 ## Support
 

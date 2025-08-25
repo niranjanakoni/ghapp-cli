@@ -196,7 +196,6 @@ export function saveCSVFileOrganized(content, filename, dataType, baseDir = './'
     const fullFilename = path.join(outputDir, `${filename}_${timestamp}.csv`);
 
     fs.writeFileSync(fullFilename, content, 'utf8');
-    logFile(`📊 ${dataType.toUpperCase()} data saved to: ${fullFilename}`);
     return fullFilename;
   } catch (error) {
     logError(`Error saving ${dataType} CSV file: ${error.message}`, error);
@@ -310,6 +309,112 @@ export function createFileBackup(filePath) {
     return backupPath;
   } catch (error) {
     logError(`Error creating backup: ${error.message}`, error);
+    return null;
+  }
+}
+
+/**
+ * Generates CSV content from secrets data
+ * @param {Array} secrets - Array of secret objects
+ * @returns {string} CSV formatted string
+ */
+export function generateSecretsCSV(secrets) {
+  const headers = [
+    'scope',
+    'repository',
+    'name',
+    'value',
+    'visibility',
+    'selected_repositories',
+    'created_at',
+    'updated_at'
+  ];
+
+  const rows = secrets.map(secret => [
+    secret.scope || '',
+    secret.repository || '',
+    secret.name || '',
+    secret.value || '[ENCRYPTED_SECRET_VALUE]',
+    secret.visibility || '',
+    secret.selected_repositories || '',
+    secret.created_at || '',
+    secret.updated_at || ''
+  ]);
+
+  return formatCSVContent(headers, rows);
+}
+
+/**
+ * Generates and saves variables data to CSV file
+ * @param {Array} variables - Array of variable objects
+ * @param {string} outputDir - Optional output directory
+ * @returns {string|null} Full file path if successful, null if failed
+ */
+export async function generateVariablesCSV(variables, outputDir = null) {
+  try {
+    const csvContent = generateVariablesCSVContent(variables);
+    const filePath = outputDir
+      ? saveCSVFileOrganized(csvContent, null, 'variables', outputDir)
+      : saveCSVFileOrganized(csvContent, 'variables', 'variables');
+
+    return filePath;
+  } catch (error) {
+    logError(`Error generating variables CSV: ${error.message}`, error);
+    return null;
+  }
+}
+
+/**
+ * Generates CSV content from variables data (internal function)
+ * @param {Array} variables - Array of variable objects
+ * @returns {string} CSV formatted string
+ */
+function generateVariablesCSVContent(variables) {
+  const headers = [
+    'scope',
+    'repository',
+    'name',
+    'value',
+    'visibility',
+    'selected_repositories',
+    'created_at',
+    'updated_at'
+  ];
+
+  const rows = variables.map(variable => [
+    variable.scope || '',
+    variable.repository || '',
+    variable.name || '',
+    variable.value || '[VARIABLE_VALUE_NOT_AVAILABLE]',
+    variable.visibility || '',
+    variable.selected_repositories || '',
+    variable.created_at || '',
+    variable.updated_at || ''
+  ]);
+
+  return formatCSVContent(headers, rows);
+}
+
+/**
+ * Generates variables CSV and saves to custom file path
+ * @param {Array} variables - Array of variable objects
+ * @param {string} outputPath - Custom output file path
+ * @returns {string|null} Full file path if successful, null if failed
+ */
+export async function generateVariablesCSVToFile(variables, outputPath) {
+  try {
+    const csvContent = generateVariablesCSVContent(variables);
+
+    // Ensure the directory exists
+    const dir = path.dirname(outputPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    fs.writeFileSync(outputPath, csvContent, 'utf8');
+    return outputPath;
+  } catch (error) {
+    logError(`Error generating variables CSV to custom path: ${error.message}`, error);
     return null;
   }
 }

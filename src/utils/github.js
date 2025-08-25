@@ -107,7 +107,7 @@ export async function fetchAllPages(apiCall, options = {}) {
       // Handle different response structures
       const data = Array.isArray(response.data)
         ? response.data
-        : response.data.repositories || response.data.items || [];
+        : response.data.repositories || response.data.items || response.data.secrets || response.data.variables || [];
 
       results.push(...data);
 
