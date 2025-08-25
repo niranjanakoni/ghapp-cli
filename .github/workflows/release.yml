@@ -126,7 +126,7 @@ jobs:
         ## System-wide Installation
         Add the package directory to your PATH environment variable.
         
-        For detailed instructions, see: USER_INSTALLATION_GUIDE.md
+        For detailed instructions, see: INSTALL.md
         EOF
         
     - name: Create archives
@@ -207,7 +207,7 @@ jobs:
           - Node.js installed on your system ([Download here](https://nodejs.org))
           
           ### Installation Guides
-          - See [USER_INSTALLATION_GUIDE.md](https://github.com/${{ github.repository }}/blob/main/USER_INSTALLATION_GUIDE.md) for detailed instructions
+          - See [INSTALL.md](https://github.com/${{ github.repository }}/blob/main/INSTALL.md) for detailed instructions
           
           No technical knowledge required - just download, extract, and use! 🎉
         token: ${{ secrets.GITHUB_TOKEN }}
